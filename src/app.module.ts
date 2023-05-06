@@ -6,9 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { MusicModule } from './music/music.module';
 import { GameModule } from './game/game.module';
 import { AdminModule } from './admin/admin.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [UserModule, AuthModule, MusicModule, GameModule, AdminModule],
+  imports: [UserModule, AuthModule, MusicModule, GameModule, AdminModule, PrismaModule],
   controllers: [AppController],
   providers: [AppService],
 })
