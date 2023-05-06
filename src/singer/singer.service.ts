@@ -31,11 +31,10 @@ export class SingerService {
 
   async patch(id: number, updateData: UpdateSingerDto) {
     await this.getOne(id);
-    const update = await this.prisma.music_singer.update({
+    await this.prisma.music_singer.update({
       where: { id },
       data: updateData,
     });
-    console.log(update);
     return;
   }
 
