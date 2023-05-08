@@ -25,6 +25,7 @@ export class SingerService {
   }
 
   async create(singerData: CreateSingerDto) {
+    // const found = this.prisma.music_singer.findUnique({where: {name: singerData.name}})
     await this.prisma.music_singer.create({ data: singerData });
     return;
   }

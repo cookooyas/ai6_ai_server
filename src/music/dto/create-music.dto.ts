@@ -5,42 +5,57 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMusicDto {
+  @ApiProperty({ example: '하입보이' })
   @IsNotEmpty()
   @IsString()
   readonly name: string;
 
+  @ApiProperty({ example: 2 })
+  @IsNotEmpty()
   @IsOptional()
   @IsNumber()
   readonly genre_id?: number;
   // 필수 아님, music_genre 테이블에 해당 장르 이름이 있는지 조회 후 없으면 추가해서 id 저장
 
+  @ApiProperty({ example: '이 노래는 어쩌구저쩌구' })
   @IsOptional()
   @IsString()
   readonly description?: string;
 
+  @ApiProperty({ example: 1 })
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   readonly singer_id: number;
 
+  @ApiProperty({ example: 'https://' })
   @IsNotEmpty()
   @IsString()
   readonly album_image_url: string;
 
+  @ApiProperty({ example: 'https://' })
   @IsNotEmpty()
   @IsString()
   readonly video_url: string;
 
+  @ApiProperty({ example: 102 })
   @IsNotEmpty()
   @IsNumber()
   readonly total_count: number;
 
+  @ApiProperty({ example: 100000 })
   @IsNotEmpty()
   @IsNumber()
   readonly total_score: number;
 
+  @ApiProperty({ example: {} })
   @IsNotEmpty()
   @IsJSON()
-  readonly sheet: object; // 수정 필요 + json으로 못 받나?
+  readonly sheet: number[][][]; // 수정 필요 + json으로 못 받나?
 }
+
+/*
+[[첫번쨰 이미지의 [머리 좌표(x,y,c), 다리 좌표 (x,y,c)]], [두번째 이미지의 ...]]
+ */
