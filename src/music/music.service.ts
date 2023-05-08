@@ -1,30 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { music } from '@prisma/client';
-import now = jest.now;
-import { timestamp } from 'rxjs';
 import { UpdateMusicDto } from './dto/update-music.dto';
 
 @Injectable()
 export class MusicService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll() {
-    const musics = await this.prisma.music.findMany({
-      where: { deleted_at: null },
-      select: {
-        id: true,
-        name: true,
-        music_genre: { select: { id: true, name: true } },
-        music_singer: { select: { id: true, name: true } },
-        album_image_url: true,
-      },
-    });
-    return musics;
+  async getAll(sort: string) {
+    if (sort === 'popular') {
+      // 왜 sort 안 되지??
+      const musics = await this.prisma.music.findMany({
+        orderBy: { played: 'desc' },
+        where: { deleted_at: null },
+        select: {
+          id: true,
+          name: true,
+          music_genre: { select: { id: true, name: true } },
+          music_singer: { select: { id: true, name: true } },
+          album_image_url: true,
+        },
+      });
+      return musics;
+    } else {
+      const musics = await this.prisma.music.findMany({
+        orderBy: { id: 'desc' },
+        where: { deleted_at: null },
+        select: {
+          id: true,
+          name: true,
+          music_genre: { select: { id: true, name: true } },
+          music_singer: { select: { id: true, name: true } },
+          album_image_url: true,
+        },
+      });
+      return musics;
+    }
   }
 
   async getOne(id: number) {
-    const musicInfo = await this.prisma.music.findMany({
+    const musicInfo = await this.prisma.music.findFirst({
       where: { id, deleted_at: null }, // findUnqiue에서 deleted_at:null 추가하면 왜 안 되지?
       select: {
         id: true,

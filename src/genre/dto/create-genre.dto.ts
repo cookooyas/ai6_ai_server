@@ -1,6 +1,8 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateGenreDto {
+  @ApiProperty({ example: '어반댄스' })
   @IsNotEmpty()
   @IsString()
   readonly name: string;
