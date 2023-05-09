@@ -36,8 +36,15 @@ export class MusicController {
   @ApiQuery({
     name: 'sort',
     description:
-      '정렬 키워드, 없으면 latest로 간주, 웬만하면 enum 값으로 보낼 것',
-    enum: ['latest', 'popular'],
+      '정렬 키워드, 없거나 잘 못 적으면 latest로 간주, 웬만하면 enum 값으로 보낼 것',
+    enum: ['latest', 'popular', 'singerABC', 'singerCBA'],
+    required: false,
+  })
+  @ApiQuery({
+    name: 'page',
+    description:
+      '페이지 번호, 1보다 작은 값은 1, maxPage보다 큰 값은 maxPage로 치환',
+    required: false,
   })
   @ApiOkResponse({
     status: 200,
@@ -45,8 +52,8 @@ export class MusicController {
     type: [GetMusicList],
   })
   @Get()
-  getAll(@Query('sort') sort: string) {
-    return this.musicService.getAll(sort);
+  getAll(@Query('sort') sort?: string, @Query('page') page?: string) {
+    return this.musicService.getAll(sort, +page ? parseInt(page) : 1);
   }
 
   @ApiOperation({
