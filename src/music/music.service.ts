@@ -76,7 +76,7 @@ export class MusicService {
       where: { id },
       data: {
         deleted_at: new Date(),
-        name: musicInfo[0].name + ':' + new Date(),
+        name: musicInfo.name + ':' + new Date(),
       },
     });
     return;

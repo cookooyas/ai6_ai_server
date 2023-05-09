@@ -14,7 +14,7 @@ export class SingerService {
   }
 
   async getOne(id: number) {
-    const singer: music_singer = await this.prisma.music_singer.findUnique({
+    const singer: music_singer = await this.prisma.music_singer.findFirst({
       where: { id },
     });
     // 에러 처리 나중에 미들웨어로 구현, 에러코드표도 작성하기
