@@ -20,7 +20,7 @@ model music {
   name               String               @db.VarChar(255)
   genre_id           Int?                 @db.UnsignedInt
   singer_id          Int                  @db.UnsignedInt
-  album_image_url    String               @db.VarChar(255)
+  album_image_url    String               @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
   description        String?              @db.VarChar(255)
   likes              Int                  @default(0) @db.UnsignedInt
   played             Int                  @default(0) @db.UnsignedInt
@@ -117,7 +117,7 @@ model user_info {
   id                Int    @id @default(autoincrement()) @db.UnsignedInt
   user_id           Int    @unique(map: "user_id") @db.UnsignedInt
   nickname          String @unique(map: "nickname") @db.VarChar(50)
-  profile_image_url String @db.VarChar(255)
+  profile_image_url String @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
   user              user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_user_id_fk")
 }
 
