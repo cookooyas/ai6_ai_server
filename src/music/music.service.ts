@@ -1,40 +1,83 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateMusicDto } from './dto/update-music.dto';
+import { CONSTANT } from '../util/constants';
 
 @Injectable()
 export class MusicService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(sort: string) {
-    if (sort === 'popular') {
-      // 왜 sort 안 되지??
-      const musics = await this.prisma.music.findMany({
-        orderBy: { played: 'desc' },
-        where: { deleted_at: null },
-        select: {
-          id: true,
-          name: true,
-          music_genre: { select: { id: true, name: true } },
-          music_singer: { select: { id: true, name: true } },
-          album_image_url: true,
-        },
-      });
-      return musics;
-    } else {
-      const musics = await this.prisma.music.findMany({
-        orderBy: { id: 'desc' },
-        where: { deleted_at: null },
-        select: {
-          id: true,
-          name: true,
-          music_genre: { select: { id: true, name: true } },
-          music_singer: { select: { id: true, name: true } },
-          album_image_url: true,
-        },
-      });
-      return musics;
+  async getAll(sort: string, page: number) {
+    const count = await this.prisma.music.count({
+      where: { deleted_at: null },
+    });
+    const maxPage = Math.ceil(count / CONSTANT.perPage);
+    page = page < 1 ? 1 : Math.min(page, maxPage);
+
+    let musics;
+    switch (sort) {
+      case 'popular':
+        musics = await this.prisma.music.findMany({
+          orderBy: { played: 'desc' },
+          where: { deleted_at: null },
+          select: {
+            id: true,
+            name: true,
+            music_genre: { select: { id: true, name: true } },
+            music_singer: { select: { id: true, name: true } },
+            album_image_url: true,
+          },
+          skip: (page - 1) * CONSTANT.perPage,
+          take: CONSTANT.perPage,
+        });
+        break;
+      case 'singerABC':
+        musics = await this.prisma.music.findMany({
+          orderBy: { music_singer: { name: 'asc' } },
+          where: { deleted_at: null },
+          select: {
+            id: true,
+            name: true,
+            music_genre: { select: { id: true, name: true } },
+            music_singer: { select: { id: true, name: true } },
+            album_image_url: true,
+          },
+          skip: (page - 1) * CONSTANT.perPage,
+          take: CONSTANT.perPage,
+        });
+        break;
+      case 'singerCBA':
+        musics = await this.prisma.music.findMany({
+          orderBy: { music_singer: { name: 'desc' } },
+          where: { deleted_at: null },
+          select: {
+            id: true,
+            name: true,
+            music_genre: { select: { id: true, name: true } },
+            music_singer: { select: { id: true, name: true } },
+            album_image_url: true,
+          },
+          skip: (page - 1) * CONSTANT.perPage,
+          take: CONSTANT.perPage,
+        });
+        break;
+      default: // latest
+        musics = await this.prisma.music.findMany({
+          orderBy: { created_at: 'desc' },
+          where: { deleted_at: null },
+          select: {
+            id: true,
+            name: true,
+            music_genre: { select: { id: true, name: true } },
+            music_singer: { select: { id: true, name: true } },
+            album_image_url: true,
+          },
+          skip: (page - 1) * CONSTANT.perPage,
+          take: CONSTANT.perPage,
+        });
+        break;
     }
+    return musics;
   }
 
   async getOne(id: number) {
@@ -59,6 +102,26 @@ export class MusicService {
     return musicInfo;
   }
 
+  async searchMusic(search: string) {
+    const musics = await this.prisma.music.findMany({
+      orderBy: { created_at: 'desc' },
+      where: {
+        deleted_at: null,
+        name: {
+          contains: search,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        music_genre: { select: { id: true, name: true } },
+        music_singer: { select: { id: true, name: true } },
+        album_image_url: true,
+      },
+    });
+    return musics;
+  }
+
   // async create(musicData)
 
   async patch(id: number, updateData: UpdateMusicDto) {
@@ -76,7 +139,7 @@ export class MusicService {
       where: { id },
       data: {
         deleted_at: new Date(),
-        name: musicInfo[0].name + ':' + new Date(),
+        name: musicInfo.name + ':' + new Date(),
       },
     });
     return;

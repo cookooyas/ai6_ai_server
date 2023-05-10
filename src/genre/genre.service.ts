@@ -14,7 +14,7 @@ export class GenreService {
   }
 
   async getOne(id: number) {
-    const genre: music_genre = await this.prisma.music_genre.findUnique({
+    const genre: music_genre = await this.prisma.music_genre.findFirst({
       where: { id },
     });
     // 에러 처리 나중에 미들웨어로 구현, 에러코드표도 작성하기

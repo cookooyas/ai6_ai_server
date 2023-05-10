@@ -10,6 +10,7 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      // disableErrorMessages: true // 배포할 때 설정해두기
     }),
   );
   setupSwagger(app);

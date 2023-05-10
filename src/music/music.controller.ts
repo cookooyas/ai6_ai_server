@@ -36,8 +36,15 @@ export class MusicController {
   @ApiQuery({
     name: 'sort',
     description:
-      '정렬 키워드, 없으면 latest로 간주, 웬만하면 enum 값으로 보낼 것',
-    enum: ['latest', 'popular'],
+      '정렬 키워드, 없거나 잘 못 적으면 latest로 간주, 웬만하면 enum 값으로 보낼 것',
+    enum: ['latest', 'popular', 'singerABC', 'singerCBA'],
+    required: false,
+  })
+  @ApiQuery({
+    name: 'page',
+    description:
+      '페이지 번호, 1보다 작은 값은 1, maxPage보다 큰 값은 maxPage로 치환',
+    required: false,
   })
   @ApiOkResponse({
     status: 200,
@@ -45,8 +52,8 @@ export class MusicController {
     type: [GetMusicList],
   })
   @Get()
-  getAll(@Query('sort') sort: string) {
-    return this.musicService.getAll(sort);
+  getAll(@Query('sort') sort?: string, @Query('page') page?: number) {
+    return this.musicService.getAll(sort, page ? Math.floor(page) : 1);
   }
 
   @ApiOperation({
@@ -62,6 +69,22 @@ export class MusicController {
   @Get(':musicId')
   getOne(@Param('musicId') id: number) {
     return this.musicService.getOne(id);
+  }
+
+  @ApiOperation({
+    summary: '뮤직 검색 API',
+    description: '검색어를 토대로 뮤직을 검색해 조회한다.',
+  })
+  @ApiParam({ name: 'keyword', description: '검색어' })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (없으면 빈 배열)',
+    type: [GetMusicList],
+  })
+  @Get('/search/:keyword')
+  searchMusic(@Param('keyword') keyword: string) {
+    // 공백으로만 이루어진 문자열은 안 됨, 걸러내야 하는데...
+    return this.musicService.searchMusic(keyword.trim());
   }
 
   @ApiOperation({
