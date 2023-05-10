@@ -72,6 +72,22 @@ export class MusicController {
   }
 
   @ApiOperation({
+    summary: '뮤직 검색 API',
+    description: '검색어를 토대로 뮤직을 검색해 조회한다.',
+  })
+  @ApiParam({ name: 'keyword', description: '검색어' })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (없으면 빈 배열)',
+    type: [GetMusicList],
+  })
+  @Get('/search/:keyword')
+  searchMusic(@Param('keyword') keyword: string) {
+    // 공백으로만 이루어진 문자열은 안 됨, 걸러내야 하는데...
+    return this.musicService.searchMusic(keyword.trim());
+  }
+
+  @ApiOperation({
     summary: '뮤직 생성 API',
     description: '보낸 정보를 토대로 뮤직 정보를 생성한다.',
   })
