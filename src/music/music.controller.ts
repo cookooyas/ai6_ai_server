@@ -52,8 +52,8 @@ export class MusicController {
     type: [GetMusicList],
   })
   @Get()
-  getAll(@Query('sort') sort?: string, @Query('page') page?: string) {
-    return this.musicService.getAll(sort, +page ? parseInt(page) : 1);
+  getAll(@Query('sort') sort?: string, @Query('page') page?: number) {
+    return this.musicService.getAll(sort, page ? Math.floor(page) : 1);
   }
 
   @ApiOperation({
