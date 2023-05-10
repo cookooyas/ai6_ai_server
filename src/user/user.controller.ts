@@ -53,4 +53,20 @@ export class UserController {
   ) {
     return await this.userService.findLikes(+userId, +pageno);
   }
+
+  @Get('/game/history/:userId')
+  async findAllGameHistory(
+    @Param('userId') userId: string,
+    @Query('pageno') pageno: string,
+  ) {
+    return await this.userService.findAllGameHistory(+userId, +pageno);
+  }
+
+  @Get('/game/history/:userId/:musicId')
+  async findOneGameHistory(
+    @Param('userId') userId: string,
+    @Param('musicId') musicId: string,
+  ) {
+    return await this.userService.findOneGameHistory(+userId, +musicId);
+  }
 }
