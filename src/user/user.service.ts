@@ -96,13 +96,76 @@ export class UserService {
     });
   }
 
-  // 최근 플레이한 리스트
+  // 히스토리 스코어
   async findAllGameHistory(userId: number, pageno: number) {
-    return await this.prismaService.user_score.findMany({
-      where: { user_id: userId },
-      take: 5,
-      skip: (pageno - 1) * 5,
-      include: { music: { select: { id: true } } },
-    });
+    const historyList = [];
+    await this.prismaService.user_score
+      .groupBy({
+        by: ['music_id'],
+        where: { user_id: userId },
+      })
+      .then(async data => {
+        for (let i = 0; i < 5; i++) {
+          const idx = i + (pageno - 1) * 5;
+          if (idx + 1 > data.length) break;
+          const music_id = data[idx].music_id;
+          const { name, album_image_url, music_singer } =
+            await this.prismaService.music.findUnique({
+              where: { id: music_id },
+              include: { music_singer: true },
+            });
+          const { total_score } =
+            await this.prismaService.music_answer.findUnique({
+              where: { music_id },
+            });
+          const { score } = await this.prismaService.user_score.findFirst({
+            where: { user_id: userId, music_id },
+            orderBy: { score: 'desc' },
+          });
+          historyList.push({
+            music_id,
+            music_name: name,
+            album_image_url,
+            music_singer: music_singer.name,
+            user_music_best_score: score,
+            music_total_score: total_score,
+          });
+        }
+      });
+    return historyList;
+  }
+
+  // 히스토리 세부 정보
+  async findOneGameHistory(userId: number, musicId: number) {
+    const historyList = [];
+    await this.prismaService.user_score
+      .findMany({
+        where: { user_id: userId, music_id: musicId },
+        orderBy: { created_at: 'desc' },
+      })
+      .then(async data => {
+        console.log(data);
+        for (let i = 0; i < data.length; i++) {
+          const { id, music_id, score, rank, created_at } = data[i];
+          const { perfect, good, miss } =
+            await this.prismaService.user_score_detail.findUnique({
+              where: { score_id: id },
+            });
+          const { total_score } =
+            await this.prismaService.music_answer.findUnique({
+              where: { music_id },
+            });
+          historyList.push({
+            music_id,
+            music_best_score_detail: { score, rank, perfect, good, miss },
+            music_total_score: total_score,
+            music_score_list: {
+              music_score: score,
+              music_score_created_at: created_at,
+            },
+          });
+        }
+      });
+    return historyList;
   }
 }
