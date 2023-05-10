@@ -28,7 +28,7 @@ export class AuthService {
             create: { email, password: hashedPassword, type: 'email' },
           },
           // 프로필이미지 default생김
-          user_info: { create: { profile_image_url: 'none', nickname } },
+          user_info: { create: { nickname } },
         },
       });
     } catch (error) {

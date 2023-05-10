@@ -73,11 +73,12 @@ model music_singer {
 }
 
 model tier {
-  id         Int         @id @default(autoincrement()) @db.UnsignedInt
-  name       tier_name   @unique(map: "name")
-  image_url  String?     @db.VarChar(255)
-  created_at DateTime    @default(now()) @db.Timestamp(0)
-  user_tier  user_tier[]
+  id            Int             @id @default(autoincrement()) @db.UnsignedInt
+  name          tier_name       @unique(map: "name")
+  image_url     String?         @db.VarChar(255)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  user_info     user_info[]
+  user_tier_log user_tier_log[]
 }
 
 model user {
@@ -91,7 +92,7 @@ model user {
   user_likes    user_likes[]
   user_play_log user_play_log[]
   user_score    user_score[]
-  user_tier     user_tier[]
+  user_tier_log user_tier_log[]
   user_token    user_token?
 }
 
@@ -118,7 +119,11 @@ model user_info {
   user_id           Int    @unique(map: "user_id") @db.UnsignedInt
   nickname          String @unique(map: "nickname") @db.VarChar(50)
   profile_image_url String @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
+  current_tier      Int    @default(6) @db.UnsignedInt
+  tier              tier   @relation(fields: [current_tier], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_tier_id_fk")
   user              user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_user_id_fk")
+
+  @@index([current_tier], map: "user_info_tier_id_fk")
 }
 
 model user_item {
@@ -183,18 +188,6 @@ model user_score_detail {
   user_score user_score @relation(fields: [score_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_score_detail_user_score_id_fk")
 }
 
-model user_tier {
-  id         Int      @id @default(autoincrement()) @db.UnsignedInt
-  user_id    Int      @db.UnsignedInt
-  tier_id    Int      @db.UnsignedInt
-  created_at DateTime @default(now()) @db.Timestamp(0)
-  tier       tier     @relation(fields: [tier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_tier_tier_id_fk")
-  user       user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_tier_user_id_fk")
-
-  @@index([tier_id], map: "user_tier_tier_id_fk")
-  @@index([user_id], map: "user_tier_user_id_fk")
-}
-
 model user_token {
   id            Int      @id @default(autoincrement()) @db.UnsignedInt
   user_id       Int      @unique(map: "user_id") @db.UnsignedInt
@@ -204,12 +197,16 @@ model user_token {
   user          user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "token_user_id_fk")
 }
 
-enum tier_name {
-  BRONZE
-  SILVER
-  GOLD
-  PLATINUM
-  DIAMOND
+model user_tier_log {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  user_id    Int      @db.UnsignedInt
+  tier_id    Int      @db.UnsignedInt
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  tier       tier     @relation(fields: [tier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_tier_log_tier_id_fk")
+  user       user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_tier_log_user_id_fk")
+
+  @@index([tier_id], map: "user_tier_tier_id_fk")
+  @@index([user_id], map: "user_tier_user_id_fk")
 }
 
 enum user_score_rank {
@@ -226,4 +223,13 @@ enum user_auth_type {
   apple
   naver
   kakao
+}
+
+enum tier_name {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  UNRANKED
 }
