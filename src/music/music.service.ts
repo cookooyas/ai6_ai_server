@@ -102,6 +102,26 @@ export class MusicService {
     return musicInfo;
   }
 
+  async searchMusic(search: string) {
+    const musics = await this.prisma.music.findMany({
+      orderBy: { created_at: 'desc' },
+      where: {
+        deleted_at: null,
+        name: {
+          contains: search,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        music_genre: { select: { id: true, name: true } },
+        music_singer: { select: { id: true, name: true } },
+        album_image_url: true,
+      },
+    });
+    return musics;
+  }
+
   // async create(musicData)
 
   async patch(id: number, updateData: UpdateMusicDto) {
