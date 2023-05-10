@@ -4,7 +4,6 @@ import {
   Param,
   ValidationPipe,
   Post,
-  Get,
   Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
