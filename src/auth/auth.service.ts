@@ -76,14 +76,11 @@ export class AuthService {
     ) {
       const accessTokenPayload = { email };
       // 원래라면 userId라던가 또 다른 정보들을 가지고 refresh토큰을 만들어줘야하지만, 지금은 잠시 고려하지않겠다.
-      // accessToken==refreshToken
-      const refreshTokenPayload = { email };
       const accessToken = await this.jwtService.sign(accessTokenPayload);
-      const refreshToken = await this.jwtService.sign(refreshTokenPayload);
       await this.prismaService.user_token.create({
         data: {
           user_id: userId,
-          refresh_token: refreshToken,
+          refresh_token: accessToken,
           expired_at: new Date(), //시간 수정할것
         },
       });
