@@ -1,8 +1,11 @@
 import {
   Controller,
+  Req,
+  Res,
   Body,
   Param,
   ValidationPipe,
+  UseGuards,
   Post,
   Delete,
 } from '@nestjs/common';
@@ -19,6 +22,7 @@ import {
   ApiTags,
   ApiProperty,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { GetJoinInfo } from 'src/util/swaggerOkResponse/getJoinInfo';
 import { GetSigninAccessToken } from 'src/util/swaggerOkResponse/getSigninAccessToken';
 import { GetSignoutMessage } from 'src/util/swaggerOkResponse/getSignoutMessage';
@@ -78,12 +82,16 @@ export class AuthController {
   })
   @Post('/signin')
   async signin(
+    @Res({ passthrough: true }) res,
     @Body(ValidationPipe) authCredentialDto: AuthCredentialDto,
-  ): Promise<{ accessToken }> {
-    return await this.authService.signin(authCredentialDto);
+  ) {
+    const { accessToken } = await this.authService.signin(authCredentialDto);
+    res.cookie('AccessToken', accessToken);
+    return 'login success';
   }
 
   // 로그아웃 API
+
   @ApiOperation({
     summary: '로그아웃 API',
     description: '로그아웃을 요청하여 user_token의 refresh token을 제거한다.',
@@ -98,9 +106,11 @@ export class AuthController {
     description: '정상 응답 (signout success메세지를 반환한다.)',
     type: GetSignoutMessage,
   })
-  @Delete('/signout/:userId')
-  async signout(@Param('userId') userId: string): Promise<{ message: string }> {
-    return await this.authService.signout(+userId);
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('/signout')
+  async signout(@Req() req): Promise<{ message: string }> {
+    const { user_id } = req.user;
+    return await this.authService.signout(+user_id);
   }
 
   // 회원탈퇴 API
@@ -118,9 +128,11 @@ export class AuthController {
     description: '정상 응답 (leave success메세지를 반환한다.)',
     type: GetLeaveMessage,
   })
-  @Delete('/leave/:userId')
-  async leave(@Param('userId') userId: string): Promise<{ message: string }> {
-    return await this.authService.leave(+userId);
+  @UseGuards(AuthGuard('jwt'))
+  @Delete('/leave')
+  async leave(@Req() req): Promise<{ message: string }> {
+    const { user_id } = req.user;
+    return await this.authService.leave(+user_id);
   }
 
   // 비밀번호 검증 API
@@ -138,12 +150,10 @@ export class AuthController {
     status: 200,
     description: '정상 응답 (검증이 확인되었을 경우, true를 반환한다.)',
   })
-  @Post('/password/:userId')
-  async checkPassword(
-    @Param('userId') userId: string,
-    @Body() data: any,
-  ): Promise<boolean> {
-    console.log(typeof data);
-    return await this.authService.checkPassword(+userId, data);
+  @UseGuards(AuthGuard('jwt'))
+  @Post('/password')
+  async checkPassword(@Req() req, @Body() data: any): Promise<boolean> {
+    const { user_id } = req.user;
+    return await this.authService.checkPassword(+user_id, data);
   }
 }

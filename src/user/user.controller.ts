@@ -1,72 +1,58 @@
 import {
   Controller,
+  Req,
+  Res,
   Body,
-  Param,
   Query,
-  ValidationPipe,
-  Post,
-  Patch,
   Get,
+  Patch,
+  Param,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { AuthGuard } from '@nestjs/passport';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('/profile/:userId')
-  async findUser(@Param('userId') userId: string) {
-    return await this.userService.findUser(+userId);
+  @Get('/profile')
+  async findUser(@Req() req) {
+    const { user_id } = req.user;
+    return await this.userService.findUser(+user_id);
   }
 
-  @Patch('/profile/:userId')
-  async updateUser(
-    @Param('userId') userId: string,
-    @Body() updateUserInfoDto: UpdateUserInfoDto,
-  ) {
-    return await this.userService.updateUser(+userId, updateUserInfoDto);
+  @Patch('/profile')
+  async updateUser(@Req() req, @Body() updateUserInfoDto: UpdateUserInfoDto) {
+    const { user_id } = req.user;
+    return await this.userService.updateUser(+user_id, updateUserInfoDto);
   }
 
-  @Patch('/password/:userId')
+  @Patch('/password')
   async updatePassword(
-    @Param('userId') userId: string,
+    @Req() req,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    return await this.userService.updatePassword(+userId, updatePasswordDto);
+    const { user_id } = req.user;
+    return await this.userService.updatePassword(+user_id, updatePasswordDto);
   }
 
-  @Get('/calendar/:userId')
+  @Get('/calendar')
   async findCalendar(
-    @Param('userId') userId: string,
+    @Req() req,
     @Query('year') year: string,
     @Query('month') month: string,
   ) {
-    return await this.userService.findCalendar(+userId, year, month);
+    const { user_id } = req.user;
+    return await this.userService.findCalendar(+user_id, year, month);
   }
 
-  @Get('/likes/:userId')
-  async findLikes(
-    @Param('userId') userId: string,
-    @Query('pageno') pageno: string,
-  ) {
-    return await this.userService.findLikes(+userId, +pageno);
-  }
-
-  @Get('/game/history/:userId')
-  async findAllGameHistory(
-    @Param('userId') userId: string,
-    @Query('pageno') pageno: string,
-  ) {
-    return await this.userService.findAllGameHistory(+userId, +pageno);
-  }
-
-  @Get('/game/history/:userId/:musicId')
-  async findOneGameHistory(
-    @Param('userId') userId: string,
-    @Param('musicId') musicId: string,
-  ) {
-    return await this.userService.findOneGameHistory(+userId, +musicId);
+  @Get('/likes')
+  async findLikes(@Req() req, @Query('pageno') pageno: string) {
+    const { user_id } = req.user;
+    return await this.userService.findLikes(+user_id, +pageno);
   }
 }

@@ -34,11 +34,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const admin = await this.prismaService.user_admin.findUnique({
       where: { user_id },
     });
-    const refreshTokenExp = await this.prismaService.user_token.findFirst({
+    const tokenExp = await this.prismaService.user_token.findFirst({
       where: { user_id: user_id },
       select: { expired_at: true },
     });
     const isAdmin = admin ? true : false;
-    return { user_id, isAdmin, refreshTokenExp };
+    return { user_id, isAdmin, tokenExp };
   }
 }
