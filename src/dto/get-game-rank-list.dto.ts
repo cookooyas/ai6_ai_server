@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class GetGameRankList {
+export class GetGameRankListDto {
   @ApiProperty({ example: 1 })
   id: number;
 

@@ -8,8 +8,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { SingerService } from './singer.service';
-import { CreateSingerDto } from './dto/create-singer.dto';
-import { UpdateSingerDto } from './dto/update-singer.dto';
+import { CreateSingerDto } from '../../dto/create-singer.dto';
+import { UpdateSingerDto } from '../../dto/update-singer.dto';
 import {
   ApiBody,
   ApiOkResponse,
@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { GetSingerInfo } from '../util/swaggerOkResponse/getSingerInfo';
+import { GetSingerInfoDto } from '../../dto/get-singer-info-dto';
 
 @Controller('singer')
 @ApiTags('가수 API')
@@ -31,7 +31,7 @@ export class SingerController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
-    type: [GetSingerInfo],
+    type: [GetSingerInfoDto],
   })
   @Get()
   getAll() {
@@ -46,7 +46,7 @@ export class SingerController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
-    type: GetSingerInfo,
+    type: GetSingerInfoDto,
   })
   @Get(':singerId')
   getOne(@Param('singerId') id: number) {

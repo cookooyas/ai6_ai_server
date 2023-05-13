@@ -7,8 +7,8 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { CONSTANT } from '../util/constants';
-import { GetGameRankList } from '../util/swaggerOkResponse/getGameRankList';
+import { PAGINATION } from '../util/constants';
+import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
 
 @Controller('game')
 @ApiTags('게임 API')
@@ -28,13 +28,13 @@ export class GameController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
-    type: [GetGameRankList],
+    type: [GetGameRankListDto],
   })
   @Get('ranking/:musicId')
   rankingByMusic(@Param('musicId') id: number, @Query('top') top?: number) {
     return this.gameService.rankingByMusic(
       id,
-      top ? Math.floor(top) : CONSTANT.top,
+      top ? Math.floor(top) : PAGINATION.DEFAULT_TOP,
     );
   }
 }

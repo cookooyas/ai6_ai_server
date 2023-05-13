@@ -7,9 +7,10 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CreateGenreDto } from './dto/create-genre.dto';
+import { CreateGenreDto } from '../../dto/create-genre.dto';
 import { GenreService } from './genre.service';
-import { UpdateGenreDto } from './dto/update-genre.dto';
+import { UpdateGenreDto } from '../../dto/update-genre.dto';
+import { GetGenreInfoDto } from '../../dto/get-genre-info.dto';
 import {
   ApiBody,
   ApiOkResponse,
@@ -17,7 +18,6 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { GetGenreInfo } from '../util/swaggerOkResponse/getGenreInfo';
 
 @Controller('genre')
 @ApiTags('장르 API')
@@ -31,7 +31,7 @@ export class GenreController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
-    type: [GetGenreInfo],
+    type: [GetGenreInfoDto],
   })
   @Get()
   getAll() {
@@ -46,7 +46,7 @@ export class GenreController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
-    type: GetGenreInfo,
+    type: GetGenreInfoDto,
   })
   @Get(':genreId')
   getOne(@Param('genreId') id: number) {

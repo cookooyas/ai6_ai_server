@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GetSingerInfo } from './getSingerInfo';
-import { GetGenreInfo } from './getGenreInfo';
+import { GetGenreInfoDto } from './get-genre-info.dto';
+import { GetSingerInfoDto } from './get-singer-info-dto';
 
-export class GetMusicList {
+export class GetMusicListDto {
   @ApiProperty({ example: 1 })
   id: number;
 
@@ -10,10 +10,10 @@ export class GetMusicList {
   name: string;
 
   @ApiProperty()
-  music_genre: GetGenreInfo;
+  music_genre: GetGenreInfoDto;
 
   @ApiProperty()
-  music_singer: GetSingerInfo;
+  music_singer: GetSingerInfoDto;
 
   @ApiProperty({ example: 'https://www.~~~' })
   album_image_url: string;

@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CONSTANT } from '../util/constants';
+import { PAGINATION } from '../util/constants';
+import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
 
 @Injectable()
 export class GameService {
   constructor(private prisma: PrismaService) {}
 
   async rankingByMusic(id: number, top: number) {
-    top = top < CONSTANT.top ? CONSTANT.top : top;
+    top = top < PAGINATION.DEFAULT_TOP ? PAGINATION.DEFAULT_TOP : top;
 
     const data = await this.prisma.user_score.groupBy({
       by: ['user_id'],
