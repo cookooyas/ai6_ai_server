@@ -7,10 +7,12 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
-import { CreateMusicDto } from './dto/create-music.dto';
-import { UpdateMusicDto } from './dto/update-music.dto';
+import { CreateMusicDto } from '../dto/create-music.dto';
+import { UpdateMusicDto } from '../dto/update-music.dto';
 import {
   ApiBody,
   ApiOkResponse,
@@ -19,8 +21,9 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { GetMusicList } from '../util/swaggerOkResponse/getMusicList';
-import { GetMusicInfo } from '../util/swaggerOkResponse/getMusicInfo';
+import { AuthGuard } from '@nestjs/passport';
+import { GetMusicListDto } from '../dto/get-music-list-dto';
+import { GetMusicInfoDto } from '../dto/get-music-info.dto';
 
 @Controller('music')
 @ApiTags('뮤직 API')
@@ -49,7 +52,7 @@ export class MusicController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (genre는 null일 수 있다)',
-    type: [GetMusicList],
+    type: [GetMusicListDto],
   })
   @Get()
   getAll(@Query('sort') sort?: string, @Query('page') page?: number) {
@@ -64,7 +67,7 @@ export class MusicController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (genre와 description은 null일 수 있다)',
-    type: GetMusicInfo,
+    type: GetMusicInfoDto,
   })
   @Get(':musicId')
   getOne(@Param('musicId') id: number) {
@@ -79,14 +82,15 @@ export class MusicController {
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (없으면 빈 배열)',
-    type: [GetMusicList],
+    type: [GetMusicListDto],
   })
   @Get('/search/:keyword')
   searchMusic(@Param('keyword') keyword: string) {
-    // 공백으로만 이루어진 문자열은 안 됨, 걸러내야 하는데...
+    // 공백으로만 이루어진 문자열은 안 됨, 걸러내야 하는데... -> regex
     return this.musicService.searchMusic(keyword.trim());
   }
 
+  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 생성 API',
     description: '보낸 정보를 토대로 뮤직 정보를 생성한다.',
@@ -98,9 +102,10 @@ export class MusicController {
   })
   @Post()
   create(@Body() musicData: CreateMusicDto) {
-    return 'Body에 담긴 정보를 토대로 노래를 추가합니다.';
+    return this.musicService.create(musicData);
   }
 
+  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 수정 API',
     description: '보낸 정보를 토대로 뮤직 정보를 수정한다.',
@@ -116,6 +121,7 @@ export class MusicController {
     return this.musicService.patch(id, updateData);
   }
 
+  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 삭제 API',
     description: '보낸 정보를 토대로 뮤직 정보를 삭제한다.',
@@ -139,9 +145,11 @@ export class MusicController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Patch('like/:musicId')
-  like(@Param('musicId') id: number) {
-    return this.musicService.like(id);
+  like(@Param('musicId') id: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.musicService.like(id, user_id);
   }
 
   @ApiOperation({
@@ -153,9 +161,18 @@ export class MusicController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Delete('like/:musicId')
-  unlike(@Param('musicId') id: number) {
-    return this.musicService.unlike(id);
+  unlike(@Param('musicId') id: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.musicService.unlike(id, user_id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('like/:musicId')
+  islike(@Param('musicId') id: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.musicService.islike(id, user_id);
   }
 
   // 게임 플레이시 played +1 해주는 로직은 game에 작성하면 되나?

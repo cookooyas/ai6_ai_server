@@ -3,8 +3,10 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { setupSwagger } from './util/swagger';
 import * as cookieParser from 'cookie-parser';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // 에러 처리 로직 제대로 안 짬 -> 꼭 짜기
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

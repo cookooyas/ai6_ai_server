@@ -1,21 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateSingerDto } from './dto/create-singer.dto';
-import { PrismaService } from '../prisma/prisma.service';
-import { music_singer } from '@prisma/client';
-import { UpdateSingerDto } from './dto/update-singer.dto';
+import { CreateSingerDto } from '../../dto/create-singer.dto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { UpdateSingerDto } from '../../dto/update-singer.dto';
+import { GetSingerInfoDto } from '../../dto/get-singer-info-dto';
 
 @Injectable()
 export class SingerService {
   constructor(private prisma: PrismaService) {}
 
   async getAll() {
-    const singers: music_singer[] = await this.prisma.music_singer.findMany();
+    const singers: GetSingerInfoDto[] = await this.prisma.music_singer.findMany(
+      {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    );
     return singers;
   }
 
   async getOne(id: number) {
-    const singer: music_singer = await this.prisma.music_singer.findFirst({
+    const singer: GetSingerInfoDto = await this.prisma.music_singer.findFirst({
       where: { id },
+      select: {
+        id: true,
+        name: true,
+      },
     });
     // 에러 처리 나중에 미들웨어로 구현, 에러코드표도 작성하기
     if (!singer) {

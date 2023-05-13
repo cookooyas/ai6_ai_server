@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GetGenreInfo } from './getGenreInfo';
-import { GetSingerInfo } from './getSingerInfo';
-import { GetMusicList } from './getMusicList';
+import { GetMusicListDto } from './get-music-list-dto';
 
-export class GetMusicInfo extends GetMusicList {
+export class GetMusicInfoDto extends GetMusicListDto {
   @ApiProperty({ example: '이 곡은 어쩌구 저쩌구' })
   description: string;
 
