@@ -55,4 +55,16 @@ export class UserController {
     const { user_id } = req.user;
     return await this.userService.findLikes(+user_id, +pageno);
   }
+
+  @Get('/game/history')
+  async findAllGameHistory(@Req() req, @Query('pageno') pageno: string) {
+    const { user_id } = req.user;
+    return await this.userService.findAllGameHistory(+user_id, +pageno);
+  }
+
+  @Get('/game/history/:musicId')
+  async findOneGameHistory(@Req() req, @Param('musicId') musicId: string) {
+    const { user_id } = req.user;
+    return await this.userService.findOneGameHistory(+user_id, +musicId);
+  }
 }
