@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,8 +12,11 @@ const fromAuthCookie = function () {
     let accessToken;
     if (request && request.cookies) {
       accessToken = request.cookies['AccessToken'];
+      if (!accessToken) {
+        throw new NotFoundException('COOKIE NOT FOUND');
+      }
+      return accessToken;
     }
-    return accessToken;
   };
 };
 
@@ -24,21 +31,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
   async validate(payload) {
     const { email } = payload;
-    const user = await this.prismaService.user_auth.findFirst({
+
+    const user_auth = await this.prismaService.user_auth.findFirst({
       where: { email },
     });
-    if (!user) {
+    if (!user_auth) {
       throw new UnauthorizedException();
     }
-    const { user_id } = user;
+    const { user_id } = user_auth;
+    const { deleted_at } = await this.prismaService.user.findUnique({
+      where: { id: user_id },
+    });
+    if (deleted_at) {
+      throw new UnauthorizedException('this user was deleted');
+    }
     const admin = await this.prismaService.user_admin.findUnique({
       where: { user_id },
     });
-    const tokenExp = await this.prismaService.user_token.findFirst({
+    const { expired_at } = await this.prismaService.user_token.findFirst({
       where: { user_id: user_id },
-      select: { expired_at: true },
     });
     const isAdmin = admin ? true : false;
-    return { user_id, isAdmin, tokenExp };
+    return { user_id, isAdmin, expired_at };
   }
 }

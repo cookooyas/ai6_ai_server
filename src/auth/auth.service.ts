@@ -86,7 +86,7 @@ export class AuthService {
         create: {
           user_id: userId,
           refresh_token: accessToken,
-          expired_at: new Date(), //시간 수정할것}
+          expired_at: new Date(), //시간 수정할것
         },
       });
       return { accessToken };
@@ -97,8 +97,6 @@ export class AuthService {
 
   // 로그아웃 기능
   async signout(userId: number): Promise<{ message: string }> {
-    // 원래라면 토큰이 저장된 공간에서 해당 토큰을 가져와야한다.
-    // 이후 미들웨어를 통해 처리된 유저 id를 가져와서 검증한다.
     const found = await this.prismaService.user_token.delete({
       where: { user_id: userId },
     });

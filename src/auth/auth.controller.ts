@@ -7,6 +7,7 @@ import {
   ValidationPipe,
   UseGuards,
   Post,
+  Get,
   Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -86,7 +87,11 @@ export class AuthController {
     @Body(ValidationPipe) authCredentialDto: AuthCredentialDto,
   ) {
     const { accessToken } = await this.authService.signin(authCredentialDto);
-    res.cookie('AccessToken', accessToken);
+    await res.cookie('AccessToken', accessToken, {
+      maxAge: 1000 * 60 * 60,
+      httpOnly: true,
+      // secure: true,
+    });
     return 'login success';
   }
 
@@ -108,8 +113,11 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Delete('/signout')
-  async signout(@Req() req): Promise<{ message: string }> {
+  async signout(@Req() req, @Res() res): Promise<{ message: string }> {
     const { user_id } = req.user;
+    res.cookie('AccessToken', '', {
+      maxAge: 0,
+    });
     return await this.authService.signout(+user_id);
   }
 
@@ -155,5 +163,14 @@ export class AuthController {
   async checkPassword(@Req() req, @Body() data: any): Promise<boolean> {
     const { user_id } = req.user;
     return await this.authService.checkPassword(+user_id, data);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/checkUser')
+  async checkUser(@Req() req) {
+    return {
+      isLoggedIn: req.user.user_id ? true : false,
+      isAdmin: req.user.isAdmin,
+    };
   }
 }
