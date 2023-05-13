@@ -42,14 +42,15 @@ export class AuthController {
   @ApiBody({ type: CreateUserDto })
   @ApiOkResponse({
     status: 200,
-    description: '정상 응답 (user id와 created_at deleted_at을 반환한다)',
+    description: '정상 응답 (join success 메세지를 반환한다)',
     type: GetJoinInfo,
   })
   @Post('/join')
   async join(
     @Body(ValidationPipe) createUserDto: CreateUserDto,
-  ): Promise<user> {
-    return await this.authService.createUser(createUserDto);
+  ): Promise<string> {
+    await this.authService.createUser(createUserDto);
+    return 'join success';
   }
 
   // 중복체크 API
@@ -73,12 +74,12 @@ export class AuthController {
   // 로그인 API
   @ApiOperation({
     summary: '로그인 API',
-    description: 'email과 password를 입력받아 중복검사를 요청한다.',
+    description: 'email과 password를 입력받아 로그인 및 쿠키를 생성한다.',
   })
   @ApiBody({ type: AuthCredentialDto })
   @ApiOkResponse({
     status: 200,
-    description: '정상 응답 (user id와 created_at deleted_at을 반환한다)',
+    description: '정상 응답 (쿠키와 함께 login success 메세지를 반환한다.)',
     type: GetSigninAccessToken,
   })
   @Post('/signin')
@@ -101,11 +102,6 @@ export class AuthController {
     summary: '로그아웃 API',
     description: '로그아웃을 요청하여 user_token의 refresh token을 제거한다.',
   })
-  @ApiParam({
-    name: 'userId',
-    description:
-      '토큰과 인증관련 미들웨어를 설정하기전 임의로 세워둔 파라미터, 유저아이디를 입력한다.',
-  })
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (signout success메세지를 반환한다.)',
@@ -126,11 +122,6 @@ export class AuthController {
     summary: '회원탈퇴 API',
     description: '회원탈퇴를 요청하여 user의 smooth_delete를 진행한다.',
   })
-  @ApiParam({
-    name: 'userId',
-    description:
-      '토큰과 인증관련 미들웨어를 설정하기전 임의로 세워둔 파라미터, 유저아이디를 입력한다.',
-  })
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (leave success메세지를 반환한다.)',
@@ -148,11 +139,6 @@ export class AuthController {
     summary: '비밀번호 검증 API',
     description:
       'userId를 파라미터로, password를 바디로 입력받아 비밀번호를 검증한다.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description:
-      '토큰과 인증관련 미들웨어를 설정하기전 임의로 세워둔 파라미터, 유저아이디를 입력한다.',
   })
   @ApiOkResponse({
     status: 200,
