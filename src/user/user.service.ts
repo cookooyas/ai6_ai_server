@@ -103,12 +103,6 @@ export class UserService {
 
   // 최근 플레이한 리스트
   async findAllGameHistory(userId: number, pageno: number) {
-    return await this.prismaService.user_score.findMany({
-      where: { user_id: userId },
-      take: 5,
-      skip: (pageno - 1) * 5,
-      include: { music: { select: { id: true } } },
-    });
     const historyList = [];
     await this.prismaService.user_score
       .groupBy({
