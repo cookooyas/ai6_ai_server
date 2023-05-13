@@ -13,12 +13,32 @@ import { UserService } from './user.service';
 import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+  ApiProperty,
+} from '@nestjs/swagger';
+import { GetUserProfile } from 'src/util/swaggerOkResponse/getUserProfile';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('user')
+@ApiTags('유저 API')
 export class UserController {
   constructor(private userService: UserService) {}
 
+  @ApiOperation({
+    summary: 'user profile 조회 API',
+    description: '유저토큰을 통해 회원정보를 조회한다.',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (유저 정보를 반환한다)',
+    type: GetUserProfile,
+  })
   @Get('/profile')
   async findUser(@Req() req) {
     const { user_id } = req.user;
