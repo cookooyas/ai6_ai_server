@@ -8,11 +8,15 @@ import {
   Patch,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
+import { UpdateUserNicknameDto } from './dto/update-userNickname.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiOkResponse,
@@ -24,7 +28,6 @@ import {
 } from '@nestjs/swagger';
 import { GetUserProfile } from 'src/util/swaggerOkResponse/getUserProfile';
 import { UpdateUserProfile } from 'src/util/swaggerOkResponse/updateUserProfile';
-import { GetUserCalendar } from 'src/util/swaggerOkResponse/getUserCalendar';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('user')
@@ -48,24 +51,50 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: 'user profile 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 회원정보를 수정한다.',
+    summary: 'user 닉네임 수정 API',
+    description: '유저토큰을 통해 인증하고 바디 정보로 회원 닉네임을 수정한다.',
   })
-  @ApiBody({ type: UpdateUserInfoDto })
+  @ApiBody({ type: UpdateUserNicknameDto })
   @ApiOkResponse({
     status: 200,
-    description: '정상 응답 (수정된 메세지를 반환한다)',
-    type: UpdateUserProfile,
+    description: '정상 응답 (수정된 유저인포를 반환한다)',
   })
-  @Patch('/profile')
-  async updateUser(@Req() req, @Body() updateUserInfoDto: UpdateUserInfoDto) {
+  @Patch('/profile/nickname')
+  async updateUserNickname(
+    @Req() req,
+    @Body() updateUserInfoDto: UpdateUserNicknameDto,
+  ) {
     const { user_id } = req.user;
-    return await this.userService.updateUser(+user_id, updateUserInfoDto);
+    return await this.userService.updateUserNickname(
+      +user_id,
+      updateUserInfoDto,
+    );
   }
 
   @ApiOperation({
-    summary: 'user profile 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 회원정보를 수정한다.',
+    summary: 'user profile image 업로드 및 변경 API',
+    description:
+      '유저토큰을 통해 인증하고 바디의 file을 받아 프로필 이미지를 업로드하고 url정보를 수정한다.',
+  })
+  @ApiBody({ type: UpdateUserNicknameDto })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (수정된 유저 프로필 이미지 url을 반환한다)',
+    type: 'https://ai11dancerflow-upload-user-profile-image.s3.ap-northeast-2.amazonaws.com/%EB%9D%BC%EC%9D%B4%EC%96%B8_1684091515649.png',
+  })
+  @Post('/profile/image')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadUserProfileImage(
+    @Req() req,
+    @UploadedFile() file: Express.MulterS3.File,
+  ) {
+    const { user_id } = req.user;
+    return this.userService.uploadUserProfileImage(user_id, file);
+  }
+
+  @ApiOperation({
+    summary: 'user password 수정 API',
+    description: '유저토큰을 통해 인증하고 바디 정보로 비밀번호 수정한다.',
   })
   @ApiBody({ type: UpdatePasswordDto })
   @ApiOkResponse({
@@ -107,6 +136,15 @@ export class UserController {
     summary: 'user likes 조회 API',
     description: '유저토큰을 통해 인증하고 likes 목록을 조회한다.',
   })
+  @ApiQuery({
+    name: 'pageno',
+    description:
+      '페이지번호, 페이지 번호를 명시하지 않을 경우 전체 찜 리스트를, 초과된 페이지 번호를 호출할 경우 가장 마지막 페이지를 반환한다.',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (유저 찜 리스트를 반환한다.)',
+  })
   @Get('/likes')
   async findLikes(@Req() req, @Query('pageno') pageno: string) {
     const { user_id } = req.user;
@@ -114,21 +152,34 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: 'user profile 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 회원정보를 수정한다.',
+    summary: 'user history 조회 API',
+    description: '유저토큰을 통해 인증된 유저의 히스토리를 조회한다.',
+  })
+  @ApiQuery({
+    name: 'pageno',
+    required: true,
+    description:
+      '페이지번호, 페이지 번호를 명시해야하며, 초과된 페이지 번호를 호출할 경우 가장 마지막 페이지를 반환한다.',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (유저 히스토리 리스트를 반환한다.)',
   })
   @Get('/game/history')
   async findAllGameHistory(@Req() req, @Query('pageno') pageno: string) {
     const { user_id } = req.user;
-    return await this.userService.findAllGameHistory(
-      +user_id,
-      pageno ? +pageno : 0,
-    );
+    return await this.userService.findAllGameHistory(+user_id, +pageno);
   }
 
   @ApiOperation({
-    summary: 'user profile 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 회원정보를 수정한다.',
+    summary: 'user 상세 스코어 조회 API',
+    description:
+      '유저토큰을 통해 인증하고 노래 아이디를 파라미터로 받아 해당 노래의 디테일한 정보를 조회한다.',
+  })
+  @ApiParam({ name: 'musicId', description: '노래 id.' })
+  @ApiOkResponse({
+    status: 200,
+    description: '정상 응답 (유저 노래 상세 점수 리스트를 반환한다.)',
   })
   @Get('/game/history/:musicId')
   async findOneGameHistory(@Req() req, @Param('musicId') musicId: string) {

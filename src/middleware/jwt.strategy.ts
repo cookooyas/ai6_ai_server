@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { userInfo } from 'os';
 import { Strategy } from 'passport-jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 
