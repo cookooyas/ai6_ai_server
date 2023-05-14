@@ -1,13 +1,13 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
+import { UpdateUserNicknameDto } from './dto/update-userNickname.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import * as bcrypt from 'bcryptjs';
-
 @Injectable()
 export class UserService {
   constructor(private prismaService: PrismaService) {}
@@ -24,12 +24,12 @@ export class UserService {
     return { id, nickname, email, profile_image_url, current_tier };
   }
 
-  // 사용자 프로필 수정
-  async updateUser(userId: number, updateUserInfoDto: UpdateUserInfoDto) {
-    const { nickname, profile_image_url } = updateUserInfoDto;
-    if (!nickname && !profile_image_url) {
-      throw new NotFoundException('data Not Found');
-    }
+  // 사용자 닉네임 수정
+  async updateUserNickname(
+    userId: number,
+    updateUserNicknameDto: UpdateUserNicknameDto,
+  ) {
+    const { nickname } = updateUserNicknameDto;
     if (
       await this.prismaService.user_info.findUnique({ where: { nickname } })
     ) {
@@ -39,9 +39,23 @@ export class UserService {
       where: { user_id: userId },
       data: {
         ...(nickname && { nickname }),
-        ...(profile_image_url && { profile_image_url }),
       },
     });
+  }
+
+  // 사용자 프로필 이미지 수정(업로드)
+  async uploadUserProfileImage(userId: number, file: Express.MulterS3.File) {
+    if (!file) {
+      throw new BadRequestException('there is no files');
+    }
+    const filePath = file.location;
+    await this.prismaService.user_info.update({
+      where: { user_id: userId },
+      data: {
+        profile_image_url: filePath,
+      },
+    });
+    return { filePath };
   }
 
   // 사용자 비밀번호 변경
@@ -120,6 +134,9 @@ export class UserService {
         where: { user_id: userId },
       })
       .then(async data => {
+        const total_length = data.length;
+        const maxPage = Math.ceil(total_length / 5);
+        pageno = pageno > maxPage ? maxPage : pageno;
         for (let i = 0; i < 5; i++) {
           const idx = i + (pageno - 1) * 5;
           if (idx + 1 > data.length) break;

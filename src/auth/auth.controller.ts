@@ -137,8 +137,7 @@ export class AuthController {
   // 비밀번호 검증 API
   @ApiOperation({
     summary: '비밀번호 검증 API',
-    description:
-      'userId를 파라미터로, password를 바디로 입력받아 비밀번호를 검증한다.',
+    description: 'password를 바디로 입력받아 비밀번호를 검증한다.',
   })
   @ApiOkResponse({
     status: 200,
@@ -151,6 +150,15 @@ export class AuthController {
     return await this.authService.checkPassword(+user_id, data);
   }
 
+  @ApiOperation({
+    summary: '유저 로그인 유무 판별 API',
+    description: '로그인한 유저의 정보와 어드민 유무를 검증한다.',
+  })
+  @ApiOkResponse({
+    status: 200,
+    description:
+      '정상 응답 ({ isLoggedIn : boolean, isAdmin : boolean }를 반환한다.)',
+  })
   @UseGuards(AuthGuard('jwt'))
   @Get('/checkUser')
   async checkUser(@Req() req) {
