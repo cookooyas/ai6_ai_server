@@ -88,17 +88,27 @@ export class UserService {
 
   // 사용자 찜 리스트 조회
   async findLikes(userId: number, pageno: number): Promise<object[]> {
-    console.log(userId, pageno);
-    return await this.prismaService.user_likes.findMany({
+    let total_length;
+    const perPage = 5;
+    await this.prismaService.user_likes
+      .findMany({
+        where: { user_id: userId },
+      })
+      .then(data => (total_length = data.length));
+    const maxPage = Math.ceil(total_length / perPage);
+    pageno = pageno > maxPage ? maxPage : pageno;
+    const userLikes = await this.prismaService.user_likes.findMany({
       where: { user_id: userId },
-      take: 5,
-      skip: (pageno - 1) * 5,
+      ...(pageno > 0 && { take: perPage }),
+      ...(pageno > 0 && { skip: (pageno - 1) * perPage }),
       include: {
         music: {
           include: { music_singer: { select: { name: true } } },
         },
       },
     });
+
+    return userLikes;
   }
 
   // 최근 플레이한 리스트
@@ -143,15 +153,17 @@ export class UserService {
   // 히스토리 세부 정보
   async findOneGameHistory(userId: number, musicId: number) {
     const historyList = [];
+    let result = {};
+
     await this.prismaService.user_score
       .findMany({
         where: { user_id: userId, music_id: musicId },
-        orderBy: { created_at: 'desc' },
+        orderBy: { score: 'desc' },
+        distinct: ['created_at'],
       })
       .then(async data => {
-        console.log(data);
-        for (let i = 0; i < data.length; i++) {
-          const { id, music_id, score, rank, created_at } = data[i];
+        if (data.length > 0) {
+          const { id, music_id, rank, score } = data[0];
           const { perfect, good, miss } =
             await this.prismaService.user_score_detail.findUnique({
               where: { score_id: id },
@@ -160,17 +172,25 @@ export class UserService {
             await this.prismaService.music_answer.findUnique({
               where: { music_id },
             });
-          historyList.push({
+          for (let i = 0; i < data.length; i++) {
+            const { score, created_at } = data[i];
+
+            historyList.push({
+              music_score: score,
+              music_score_created_at: created_at,
+            });
+          }
+          result = {
             music_id,
             music_best_score_detail: { score, rank, perfect, good, miss },
             music_total_score: total_score,
-            music_score_list: {
-              music_score: score,
-              music_score_created_at: created_at,
-            },
-          });
+            music_score_list: historyList.sort(
+              (a, b) =>
+                a['music_score_created_at'] - b['music_score_created_at'],
+            ),
+          };
         }
       });
-    return historyList;
+    return result;
   }
 }
