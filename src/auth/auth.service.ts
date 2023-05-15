@@ -66,7 +66,6 @@ export class AuthService {
       include: { user: true },
     });
     const userId = foundUserAuth.user.id;
-    // user와 user_auth가 연결되어있을 터인데 특정 user 스키마에서 특정 foundUser에서 user.user_auth에 왜 접근할 수 없는가.
     if (foundUserAuth.user.deleted_at) {
       throw new UnauthorizedException('this user was deleted.');
     }
@@ -74,19 +73,23 @@ export class AuthService {
       foundUserAuth &&
       (await bcrypt.compare(password, foundUserAuth.password))
     ) {
-      const accessTokenPayload = { email };
+      const accessTokenPayload = { user_id: userId };
       // 원래라면 userId라던가 또 다른 정보들을 가지고 refresh토큰을 만들어줘야하지만, 지금은 잠시 고려하지않겠다.
       const accessToken = await this.jwtService.sign(accessTokenPayload);
+      const date = new Date();
+      console.log(date);
+      date.setSeconds(date.getDate() + 3600);
+      console.log(date);
       await this.prismaService.user_token.upsert({
         where: { user_id: userId },
         update: {
           refresh_token: accessToken,
-          expired_at: new Date(), //시간 수정할것
+          expired_at: date,
         },
         create: {
           user_id: userId,
           refresh_token: accessToken,
-          expired_at: new Date(), //시간 수정할것
+          expired_at: date,
         },
       });
       return { accessToken };
@@ -122,12 +125,32 @@ export class AuthService {
       where: { user_id: userId },
     });
     const { password } = data;
-    console.log(foundUserAuth, data.password);
     const result = await bcrypt.compare(password, foundUserAuth.password);
     console.log(result, typeof result);
     if (await bcrypt.compare(password, foundUserAuth.password)) {
       return true;
     }
     return false;
+  }
+
+  // 토큰 재발급
+  async updateToken(userId: number) {
+    const accessTokenPayload = { user_id: userId };
+    const accessToken = await this.jwtService.sign(accessTokenPayload);
+    const date = new Date();
+    date.setSeconds(date.getDate() + 3600);
+    await this.prismaService.user_token.upsert({
+      where: { user_id: userId },
+      update: {
+        refresh_token: accessToken,
+        expired_at: date,
+      },
+      create: {
+        user_id: userId,
+        refresh_token: accessToken,
+        expired_at: date,
+      },
+    });
+    return { accessToken };
   }
 }

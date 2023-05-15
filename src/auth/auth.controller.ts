@@ -28,6 +28,7 @@ import { GetJoinInfo } from 'src/util/swaggerOkResponse/getJoinInfo';
 import { GetSigninAccessToken } from 'src/util/swaggerOkResponse/getSigninAccessToken';
 import { GetSignoutMessage } from 'src/util/swaggerOkResponse/getSignoutMessage';
 import { GetLeaveMessage } from 'src/util/swaggerOkResponse/getLeaveMessage';
+import { userInfo } from 'os';
 
 @Controller('auth')
 @ApiTags('인증 API')
@@ -109,7 +110,10 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Delete('/signout')
-  async signout(@Req() req, @Res() res): Promise<{ message: string }> {
+  async signout(
+    @Req() req,
+    @Res({ passthrough: true }) res,
+  ): Promise<{ message: string }> {
     const { user_id } = req.user;
     res.cookie('AccessToken', '', {
       maxAge: 0,
@@ -152,7 +156,7 @@ export class AuthController {
 
   @ApiOperation({
     summary: '유저 로그인 유무 판별 API',
-    description: '로그인한 유저의 정보와 어드민 유무를 검증한다.',
+    description: '로그인한 유무 및 로그인 시 어드민 유무를 검증한다.',
   })
   @ApiOkResponse({
     status: 200,
@@ -161,10 +165,20 @@ export class AuthController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Get('/checkUser')
-  async checkUser(@Req() req) {
-    return {
-      isLoggedIn: req.user.user_id ? true : false,
-      isAdmin: req.user.isAdmin,
-    };
+  async checkUser(@Res({ passthrough: true }) res, @Req() req) {
+    const { user_id, isAdmin, expired_in } = req.user;
+    if (expired_in) {
+      await res.cookie('AccessToken', '', {
+        maxAge: 0,
+      });
+      const { accessToken } = await this.authService.updateToken(+user_id);
+      console.log('token_created');
+      await res.cookie('AccessToken', accessToken, {
+        maxAge: 1000 * 60 * 60,
+        httpOnly: true,
+        // secure: true,
+      });
+    }
+    return { isLoggedIn: true, isAdmin };
   }
 }
