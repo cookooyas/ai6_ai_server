@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { GameService } from './game.service';
 import {
   ApiOkResponse,
@@ -87,5 +96,9 @@ export class GameController {
   //   return this.gameService.getScore(id);
   // }
 
-  // 게임 플레이시 played +1 해주는 로직은 game에 작성하면 되나?
+  @Post('result/:musicId')
+  calculateScore(@Param('musicId') id: number, @Body() playData) {
+    // 점수 계산과 동시에 점수 저장까지 하게 해주나?
+    return this.gameService.calculateScore(id, playData);
+  }
 }

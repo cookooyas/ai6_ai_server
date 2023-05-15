@@ -147,5 +147,45 @@ export class GameService {
   //   };
   // }
 
-  //
+  // 프론트가 건네준 사용자 kp 데이터로 scoring 연산하기... 연산한 다음에 동시에 저장해주는 api
+  // 근데 하나씩 보내주는 거면은..? 음 그럼 어떻게 하지???????
+  async saveScore(id: number, userId: number, scoreData) {
+    // CreateScoreDto 아직 정의 안 함 : 나중에 해주기
+    const found = await this.music.getOne(id);
+
+    const new_score = await this.prisma.user_score.create({
+      data: {
+        music_id: id,
+        user_id: userId,
+        score: scoreData.score,
+        rank: scoreData.rank,
+      },
+    });
+
+    await this.prisma.user_score_detail.create({
+      data: {
+        score_id: new_score.id,
+        perfect: scoreData.perfect,
+        good: scoreData.good,
+        miss: scoreData.miss,
+      },
+    });
+
+    await this.prisma.user_play_log.create({
+      data: { user_id: userId, music_id: id },
+    });
+
+    await this.prisma.music.update({
+      where: { id },
+      data: { played: found.played + 1 },
+    });
+
+    // return new_score.id; // scoreId가 필요한 방향으로 가면 리턴해주기
+  }
+
+  async calculateScore(id: number, playData) {
+    // scoring하는 로직? 계산해서 나온 값을 result라고 하고..
+    // this.getScore(id, result) => 유저이면, 낫유저이면..
+    return;
+  }
 }
