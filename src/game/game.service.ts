@@ -6,10 +6,7 @@ import { MusicService } from '../music/music.service';
 
 @Injectable()
 export class GameService {
-  constructor(
-    private prisma: PrismaService,
-    private musicService: MusicService,
-  ) {}
+  constructor(private prisma: PrismaService, private music: MusicService) {}
 
   async rankingByMusic(id: number, top: number) {
     top = top < PAGINATION.DEFAULT_TOP ? PAGINATION.DEFAULT_TOP : top;
@@ -21,8 +18,6 @@ export class GameService {
       orderBy: { _max: { score: 'desc' } },
       take: top,
     });
-
-    console.log(data);
 
     // 근데 soft-delete한 유저의 랭킹을 안 보여주고 싶은 건 map에서 어떻게 처리해야 하지?? 일단 null로 두고, 다시 map으로 봐야 하나?
     const rankings = await Promise.all(
@@ -77,7 +72,7 @@ export class GameService {
   }
 
   async getAnswer(id: number) {
-    await this.musicService.getOne(id);
+    await this.music.getOne(id);
 
     const answer = await this.prisma.music_answer.findUnique({
       where: { music_id: id },
@@ -100,4 +95,57 @@ export class GameService {
       sheet: answer_sheet.sheet,
     };
   }
+
+  // musicId 말고 scoreId가 들어가야 하지 않을까? 왜냐하면 방금 플레이 한 결과 가져오는 거니까! -> 내일 프론트 분들한테 여쭤보기
+  // 일단 musicId, userId를 파라미터로 받은 거 작성
+  async getScore(id: number, userId: number) {
+    const score = await this.prisma.user_score.findFirst({
+      where: { music_id: id, user_id: userId },
+      orderBy: { created_at: 'desc' },
+    });
+    if (!score) {
+      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+    }
+
+    const score_detail = await this.prisma.user_score_detail.findUnique({
+      where: { score_id: score.id },
+    });
+    if (!score_detail) {
+      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+    }
+
+    return {
+      score: score.score,
+      score_rank: score.rank,
+      perfect: score_detail.perfect,
+      good: score_detail.good,
+      miss: score_detail.miss,
+    };
+  }
+  // // scoreId 버전
+  // async getScore(id: number) {
+  //   const score = await this.prisma.user_score.findUnique({
+  //     where: { id },
+  //   });
+  //   if (!score) {
+  //     throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+  //   }
+  //
+  //   const score_detail = await this.prisma.user_score_detail.findUnique({
+  //     where: { score_id: id },
+  //   });
+  //   if (!score_detail) {
+  //     throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+  //   }
+  //
+  //   return {
+  //     score: score.score,
+  //     score_rank: score.rank,
+  //     perfect: score_detail.perfect,
+  //     good: score_detail.good,
+  //     miss: score_detail.miss,
+  //   };
+  // }
+
+  //
 }

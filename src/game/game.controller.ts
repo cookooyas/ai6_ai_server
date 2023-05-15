@@ -51,5 +51,41 @@ export class GameController {
     return this.gameService.getAnswer(id);
   }
 
+  // @Get('abcdefg')
+  // test2() {
+  //   console.log('guest');
+  //   return;
+  // }
+
+  // guest랑 user인 거 어떻게 구분해서 게임 결과 저장할 수 있는지..?
+  // 같은 엔드포인트 사용하면 안 되나요? req부분을 뒤에 두면 인식을 못 하고, 앞에 두면 없는 걸 인식 못 합니다 -> 어떻게 고쳐야 할까요?
+  // 일단 다른 엔드포인트, api로 구현해 보겠음.
+  // @UseGuards(AuthGuard('jwt'))
+  // @Get('abcdefg')
+  // test2(@Req() req) {
+  //   console.log('user');
+  //   console.log(req.user);
+  //   return req.user;
+  // }
+  //
+  // @Get('abcdefg')
+  // test() {
+  //   console.log('guest');
+  //   return 'guest';
+  // }
+
+  // musicId 버전
+  @UseGuards(AuthGuard('jwt'))
+  @Get('result/:musicId')
+  getScore(@Param('musicId') id: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.gameService.getScore(id, user_id);
+  }
+  // // scoreId 버전
+  // @Get('result/:scoreId')
+  // getScore(@Param('scoreId') id: number) {
+  //   return this.gameService.getScore(id);
+  // }
+
   // 게임 플레이시 played +1 해주는 로직은 game에 작성하면 되나?
 }
