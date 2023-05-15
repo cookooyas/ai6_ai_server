@@ -46,5 +46,10 @@ export class GameController {
     return this.gameService.myBestScoreByMusic(id, user_id);
   }
 
+  @Get('answer/:musicId')
+  getAnswer(@Param('musicId') id: number) {
+    return this.gameService.getAnswer(id);
+  }
+
   // 게임 플레이시 played +1 해주는 로직은 game에 작성하면 되나?
 }

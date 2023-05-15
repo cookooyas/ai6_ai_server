@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PAGINATION } from '../util/constants';
 import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
+import { MusicService } from '../music/music.service';
 
 @Injectable()
 export class GameService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private musicService: MusicService,
+  ) {}
 
   async rankingByMusic(id: number, top: number) {
     top = top < PAGINATION.DEFAULT_TOP ? PAGINATION.DEFAULT_TOP : top;
@@ -69,6 +73,31 @@ export class GameService {
       perfect: detail.perfect,
       good: detail.good,
       miss: detail.miss,
+    };
+  }
+
+  async getAnswer(id: number) {
+    await this.musicService.getOne(id);
+
+    const answer = await this.prisma.music_answer.findUnique({
+      where: { music_id: id },
+    });
+
+    const answer_sheet = await this.prisma.music_answer_sheet.findUnique({
+      where: { music_id: id },
+    });
+
+    if (!answer) {
+      throw new NotFoundException('정답 영상이 존재하지 않습니다.');
+    } else if (!answer_sheet) {
+      throw new NotFoundException('정답 관절 정보가 존재하지 않습니다.');
+    }
+
+    return {
+      video_url: answer.video_url,
+      total_count: answer.total_count,
+      total_score: answer.total_score,
+      sheet: answer_sheet.sheet,
     };
   }
 }

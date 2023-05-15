@@ -16,20 +16,20 @@ model item {
 }
 
 model music {
-  id                 Int                  @id @default(autoincrement()) @db.UnsignedInt
-  name               String               @db.VarChar(255)
-  genre_id           Int?                 @db.UnsignedInt
-  singer_id          Int                  @db.UnsignedInt
-  album_image_url    String               @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
-  description        String?              @db.VarChar(255)
-  likes              Int                  @default(0) @db.UnsignedInt
-  played             Int                  @default(0) @db.UnsignedInt
-  created_at         DateTime             @default(now()) @db.Timestamp(0)
-  deleted_at         DateTime?            @db.Timestamp(0)
-  music_genre        music_genre?         @relation(fields: [genre_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "music_music_genre_id_fk")
-  music_singer       music_singer         @relation(fields: [singer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "music_music_singer_id_fk")
+  id                 Int                 @id @default(autoincrement()) @db.UnsignedInt
+  name               String              @db.VarChar(255)
+  genre_id           Int?                @db.UnsignedInt
+  singer_id          Int                 @db.UnsignedInt
+  album_image_url    String              @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
+  description        String?             @db.VarChar(255)
+  likes              Int                 @default(0) @db.UnsignedInt
+  played             Int                 @default(0) @db.UnsignedInt
+  created_at         DateTime            @default(now()) @db.Timestamp(0)
+  deleted_at         DateTime?           @db.Timestamp(0)
+  music_genre        music_genre?        @relation(fields: [genre_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "music_music_genre_id_fk")
+  music_singer       music_singer        @relation(fields: [singer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "music_music_singer_id_fk")
   music_answer       music_answer?
-  music_answer_sheet music_answer_sheet[]
+  music_answer_sheet music_answer_sheet?
   user_likes         user_likes[]
   user_play_log      user_play_log[]
   user_score         user_score[]
@@ -50,7 +50,7 @@ model music_answer {
 
 model music_answer_sheet {
   id         Int      @id @default(autoincrement()) @db.UnsignedInt
-  music_id   Int      @db.UnsignedInt
+  music_id   Int      @unique(map: "music_id") @db.UnsignedInt
   sheet      Json
   created_at DateTime @default(now()) @db.Timestamp(0)
   music      music    @relation(fields: [music_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "music_answer_sheet_music_id_fk")
@@ -119,7 +119,7 @@ model user_info {
   user_id           Int    @unique(map: "user_id") @db.UnsignedInt
   nickname          String @unique(map: "nickname") @db.VarChar(50)
   profile_image_url String @default("https://www.google.com/url?sa=i&url=https%3A%2F%2Fgithub.com%2Fscottsweb%2Fnull&psig=AOvVaw3BsOhYVRqYg2iiMss_NVsU&ust=1683609303786000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCGp9n75P4CFQAAAAAdAAAAABAJ") @db.VarChar(255)
-  current_tier      Int    @default(6) @db.UnsignedInt
+  current_tier      Int    @default(1) @db.UnsignedInt
   tier              tier   @relation(fields: [current_tier], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_tier_id_fk")
   user              user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_user_id_fk")
 
