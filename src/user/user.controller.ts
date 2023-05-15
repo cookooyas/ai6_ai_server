@@ -13,8 +13,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserNicknameDto } from './dto/update-userNickname.dto';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -51,24 +50,23 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: 'user 닉네임 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 회원 닉네임을 수정한다.',
+    summary: 'userinfo 수정 API',
+    description:
+      '유저토큰을 통해 인증하고 바디 정보로 회원 닉네임/비밀번호를 수정한다.',
   })
-  @ApiBody({ type: UpdateUserNicknameDto })
+  @ApiBody({ type: UpdateUserInfoDto })
   @ApiOkResponse({
     status: 200,
-    description: '정상 응답 (수정된 유저인포를 반환한다)',
+    description: '정상 응답 (request success를 반환한다)',
+    type: 'requeset success',
   })
-  @Patch('/profile/nickname')
-  async updateUserNickname(
+  @Patch('/profile')
+  async updateUserInfo(
     @Req() req,
-    @Body() updateUserInfoDto: UpdateUserNicknameDto,
+    @Body() updateUserInfoDto: UpdateUserInfoDto,
   ) {
     const { user_id } = req.user;
-    return await this.userService.updateUserNickname(
-      +user_id,
-      updateUserInfoDto,
-    );
+    return await this.userService.updateUserInfo(+user_id, updateUserInfoDto);
   }
 
   @ApiOperation({
@@ -76,7 +74,6 @@ export class UserController {
     description:
       '유저토큰을 통해 인증하고 바디의 file을 받아 프로필 이미지를 업로드하고 url정보를 수정한다.',
   })
-  @ApiBody({ type: UpdateUserNicknameDto })
   @ApiOkResponse({
     status: 200,
     description: '정상 응답 (수정된 유저 프로필 이미지 url을 반환한다)',
@@ -90,26 +87,6 @@ export class UserController {
   ) {
     const { user_id } = req.user;
     return this.userService.uploadUserProfileImage(user_id, file);
-  }
-
-  @ApiOperation({
-    summary: 'user password 수정 API',
-    description: '유저토큰을 통해 인증하고 바디 정보로 비밀번호 수정한다.',
-  })
-  @ApiBody({ type: UpdatePasswordDto })
-  @ApiOkResponse({
-    status: 200,
-    description: '정상 응답 (request success메세지를 반환한다.)',
-    type: 'request success',
-  })
-  @Patch('/password')
-  async updatePassword(
-    @Req() req,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
-    const { user_id } = req.user;
-    await this.userService.updatePassword(+user_id, updatePasswordDto);
-    return 'request success';
   }
 
   @ApiOperation({
