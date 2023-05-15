@@ -40,7 +40,7 @@ export class GameController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('result/:musicId')
+  @Get('ranking/my/:musicId')
   myBestScoreByMusic(@Param('musicId') id: number, @Req() req) {
     const { user_id } = req.user;
     return this.gameService.myBestScoreByMusic(id, user_id);
