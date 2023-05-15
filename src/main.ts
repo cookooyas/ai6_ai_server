@@ -16,7 +16,11 @@ async function bootstrap() {
     }),
   );
   setupSwagger(app);
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept',
+    credentials: true, // 자격 증명 모드를 허용합니다.
+  });
   app.use(cookieParser());
   await app.listen(8000);
 }

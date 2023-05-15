@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PAGINATION } from '../util/constants';
 import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
@@ -15,8 +15,10 @@ export class GameService {
       _max: { score: true },
       where: { music_id: id },
       orderBy: { _max: { score: 'desc' } },
-      take: top,
+      // take: top,
     });
+
+    console.log(data);
 
     // 근데 soft-delete한 유저의 랭킹을 안 보여주고 싶은 건 map에서 어떻게 처리해야 하지?? 일단 null로 두고, 다시 map으로 봐야 하나?
     const rankings = await Promise.all(
@@ -37,10 +39,36 @@ export class GameService {
     return rankings;
   }
 
-  // async myRankingByMusic(musicId: number, userId: number) {
-  //   await this.prisma.user_score_detail.findMany({
-  //     // where: { musicId, userId }, // 근데 이건 user_score_detail에서 찾는 게 맞나?
-  //   });
-  //   return;
-  // }
+  async myBestScoreByMusic(id: number, userId: number) {
+    const found = await this.prisma.user_score.findMany({
+      where: { music_id: id, user_id: userId },
+      orderBy: { score: 'desc', created_at: 'asc' },
+    });
+
+    if (!found) {
+      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+    }
+
+    const data = await this.prisma.user_score.groupBy({
+      by: ['user_id'],
+      _max: { score: true },
+      where: { music_id: id },
+      orderBy: { _max: { score: 'desc' } },
+    });
+
+    const myRank = data.findIndex(value => value.user_id === userId) + 1;
+
+    const detail = await this.prisma.user_score_detail.findUnique({
+      where: { score_id: found[0].id },
+    });
+
+    return {
+      myRank,
+      score: found[0].score,
+      scoreRank: found[0].rank,
+      perfect: detail.perfect,
+      good: detail.good,
+      miss: detail.miss,
+    };
+  }
 }
