@@ -31,8 +31,9 @@ export class MusicService {
             music_singer: { select: { id: true, name: true } },
             album_image_url: true,
           },
-          skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
-          take: PAGINATION.DEFAULT_PER_PAGE,
+          // 페이지네이션 차후 재구현
+          // skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
+          // take: PAGINATION.DEFAULT_PER_PAGE,
         });
         break;
       case 'singerABC':
@@ -46,8 +47,8 @@ export class MusicService {
             music_singer: { select: { id: true, name: true } },
             album_image_url: true,
           },
-          skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
-          take: PAGINATION.DEFAULT_PER_PAGE,
+          // skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
+          // take: PAGINATION.DEFAULT_PER_PAGE,
         });
         break;
       case 'singerCBA':
@@ -61,8 +62,8 @@ export class MusicService {
             music_singer: { select: { id: true, name: true } },
             album_image_url: true,
           },
-          skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
-          take: PAGINATION.DEFAULT_PER_PAGE,
+          // skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
+          // take: PAGINATION.DEFAULT_PER_PAGE,
         });
         break;
       default: // latest
@@ -76,8 +77,8 @@ export class MusicService {
             music_singer: { select: { id: true, name: true } },
             album_image_url: true,
           },
-          skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
-          take: PAGINATION.DEFAULT_PER_PAGE,
+          // skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
+          // take: PAGINATION.DEFAULT_PER_PAGE,
         });
         break;
     }

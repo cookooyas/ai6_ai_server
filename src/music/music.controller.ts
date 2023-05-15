@@ -174,6 +174,4 @@ export class MusicController {
     const { user_id } = req.user;
     return this.musicService.islike(id, user_id);
   }
-
-  // 게임 플레이시 played +1 해주는 로직은 game에 작성하면 되나?
 }

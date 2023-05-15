@@ -1,5 +1,5 @@
 export const PAGINATION = {
-  DEFAULT_PER_PAGE: 10,
+  DEFAULT_PER_PAGE: 9,
   DEFAULT_TOP: 5,
 };
 
