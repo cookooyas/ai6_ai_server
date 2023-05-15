@@ -9,5 +9,6 @@ import { SingerModule } from './singer/singer.module';
   imports: [PrismaModule, GenreModule, SingerModule],
   controllers: [MusicController],
   providers: [MusicService],
+  exports: [MusicService],
 })
 export class MusicModule {}
