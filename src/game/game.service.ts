@@ -15,7 +15,7 @@ export class GameService {
       _max: { score: true },
       where: { music_id: id },
       orderBy: { _max: { score: 'desc' } },
-      // take: top,
+      take: top,
     });
 
     console.log(data);
@@ -63,9 +63,9 @@ export class GameService {
     });
 
     return {
-      myRank,
+      user_rank: myRank,
       score: found[0].score,
-      scoreRank: found[0].rank,
+      score_rank: found[0].rank,
       perfect: detail.perfect,
       good: detail.good,
       miss: detail.miss,
