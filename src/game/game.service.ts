@@ -96,19 +96,16 @@ export class GameService {
     };
   }
 
-  // musicId 말고 scoreId가 들어가야 하지 않을까? 왜냐하면 방금 플레이 한 결과 가져오는 거니까! -> 내일 프론트 분들한테 여쭤보기
-  // 일단 musicId, userId를 파라미터로 받은 거 작성
-  async getScore(id: number, userId: number) {
-    const score = await this.prisma.user_score.findFirst({
-      where: { music_id: id, user_id: userId },
-      orderBy: { created_at: 'desc' },
+  async getScore(id: number) {
+    const score = await this.prisma.user_score.findUnique({
+      where: { id },
     });
     if (!score) {
       throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
     }
 
     const score_detail = await this.prisma.user_score_detail.findUnique({
-      where: { score_id: score.id },
+      where: { score_id: id },
     });
     if (!score_detail) {
       throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
@@ -122,30 +119,6 @@ export class GameService {
       miss: score_detail.miss,
     };
   }
-  // // scoreId 버전
-  // async getScore(id: number) {
-  //   const score = await this.prisma.user_score.findUnique({
-  //     where: { id },
-  //   });
-  //   if (!score) {
-  //     throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
-  //   }
-  //
-  //   const score_detail = await this.prisma.user_score_detail.findUnique({
-  //     where: { score_id: id },
-  //   });
-  //   if (!score_detail) {
-  //     throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
-  //   }
-  //
-  //   return {
-  //     score: score.score,
-  //     score_rank: score.rank,
-  //     perfect: score_detail.perfect,
-  //     good: score_detail.good,
-  //     miss: score_detail.miss,
-  //   };
-  // }
 
   // 프론트가 건네준 사용자 kp 데이터로 scoring 연산하기... 연산한 다음에 동시에 저장해주는 api
   // 근데 하나씩 보내주는 거면은..? 음 그럼 어떻게 하지???????
@@ -180,7 +153,7 @@ export class GameService {
       data: { played: found.played + 1 },
     });
 
-    // return new_score.id; // scoreId가 필요한 방향으로 가면 리턴해주기
+    return new_score.id; // scoreId가 필요한 방향으로 가면 리턴해주기
   }
 
   async calculateScore(id: number, playData) {
