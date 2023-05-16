@@ -102,15 +102,16 @@ export class UserService {
   }
 
   // 사용자 찜 리스트 조회
-  async findLikes(userId: number, pageno: number): Promise<object[]> {
+  async findLikes(userId: number, pageno: number): Promise<any> {
     let total_length;
+    let maxPage = 1;
     const perPage = 5;
     await this.prismaService.user_likes
       .findMany({
         where: { user_id: userId },
       })
       .then(data => (total_length = data.length));
-    const maxPage = Math.ceil(total_length / perPage);
+    maxPage = Math.ceil(total_length / perPage);
     pageno = pageno > maxPage ? maxPage : pageno;
     const userLikes = await this.prismaService.user_likes.findMany({
       where: { user_id: userId },
@@ -123,12 +124,13 @@ export class UserService {
       },
     });
 
-    return userLikes;
+    return { userLikes, maxPage };
   }
 
   // 최근 플레이한 리스트
   async findAllGameHistory(userId: number, pageno: number) {
     const historyList = [];
+    let maxPage = 1;
     await this.prismaService.user_score
       .groupBy({
         by: ['music_id'],
@@ -136,7 +138,7 @@ export class UserService {
       })
       .then(async data => {
         const total_length = data.length;
-        const maxPage = Math.ceil(total_length / 5);
+        maxPage = Math.ceil(total_length / 5);
         pageno = pageno > maxPage ? maxPage : pageno;
         for (let i = 0; i < 5; i++) {
           const idx = i + (pageno - 1) * 5;
@@ -165,7 +167,7 @@ export class UserService {
           });
         }
       });
-    return historyList;
+    return { historyList, maxPage };
   }
 
   // 히스토리 세부 정보
