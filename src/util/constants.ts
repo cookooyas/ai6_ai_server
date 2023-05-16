@@ -3,6 +3,10 @@ export const PAGINATION = {
   DEFAULT_TOP: 5,
 };
 
+export const RANK = ['C', 'B', 'A', 'S', 'SSS'];
+
+export const XP = [-10, 5, 10, 20, 40];
+
 // export enum ERROR_MESSAGE {
 //   NOT_FOUND = '정보를 찾을 수 없습니다.', // 페이지를 찾을 수 없는 건가
 //   // 생성할 때 중복값 있어서 에러

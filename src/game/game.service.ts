@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PAGINATION } from '../util/constants';
+import { PAGINATION, RANK, XP } from '../util/constants';
 import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
 import { MusicService } from '../music/music.service';
 
@@ -132,7 +132,18 @@ export class GameService {
         user_id: userId,
         score: scoreData.score,
         rank: scoreData.rank,
+        delta_xp: scoreData.delta_xp,
       },
+    });
+
+    // xp 체인지용
+    const user = await this.prisma.user_info.findUnique({
+      where: { id: userId },
+    });
+
+    await this.prisma.user_info.update({
+      where: { id: userId },
+      data: { xp: user.xp + scoreData.delta_xp },
     });
 
     await this.prisma.user_score_detail.create({
@@ -247,6 +258,7 @@ export class GameService {
         miss: 0,
         frame: 0,
         rank: 'C',
+        delta_xp: 0,
       },
     );
 
@@ -255,6 +267,7 @@ export class GameService {
     // C, B, A, S, SSS
     // 0~59, 60~79, 80~89, 90~99, 100
     const score = scoreData.score;
+
     scoreData.rank =
       score == 100
         ? 'SSS'
@@ -265,6 +278,9 @@ export class GameService {
         : score >= 60
         ? 'B'
         : 'C';
+
+    // XP.(scoreData.rank) 이런 식으로는 어떻게..? XP ={ C: -10, ...} 일 때.
+    scoreData.delta_xp = XP[RANK.findIndex(rank => rank === scoreData.rank)];
 
     return scoreData;
 
