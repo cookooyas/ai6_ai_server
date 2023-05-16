@@ -230,6 +230,44 @@ export class GameService {
       answerList.push({ score, detail });
     }
     console.log(new Date());
-    return answerList;
+
+    const scoreData = answerList.reduce(
+      (acc, cur) => {
+        acc.score += cur.score;
+        acc.perfect += cur.detail[0];
+        acc.good += cur.detail[1];
+        acc.miss += cur.detail[2];
+        acc.frame += 1;
+        return acc;
+      },
+      {
+        score: 0,
+        perfect: 0,
+        good: 0,
+        miss: 0,
+        frame: 0,
+        rank: 'C',
+      },
+    );
+
+    scoreData.score = (scoreData.score / (scoreData.frame * 10)) * 100;
+
+    // C, B, A, S, SSS
+    // 0~59, 60~79, 80~89, 90~99, 100
+    const score = scoreData.score;
+    scoreData.rank =
+      score == 100
+        ? 'SSS'
+        : score >= 90
+        ? 'S'
+        : score >= 80
+        ? 'A'
+        : score >= 60
+        ? 'B'
+        : 'C';
+
+    return scoreData;
+
+    // return this.saveScore(id, userId, scoreData);
   }
 }
