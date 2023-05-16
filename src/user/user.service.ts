@@ -105,7 +105,7 @@ export class UserService {
   async findLikes(userId: number, pageno: number): Promise<any> {
     let total_length;
     let maxPage = 1;
-    const perPage = 5;
+    const perPage = 10;
     await this.prismaService.user_likes
       .findMany({
         where: { user_id: userId },
