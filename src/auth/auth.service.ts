@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { user } from '@prisma/client';
 import { AuthCredentialDto } from './dto/authCredential.dto';
@@ -9,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { error } from 'console';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,9 @@ export class AuthService {
   async createUser(createUserDto: CreateUserDto): Promise<user> {
     try {
       const { email, nickname, password } = createUserDto;
+      if (await this.prismaService.user_auth.findFirst({ where: { email } })) {
+        throw new error();
+      }
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(password, salt);
       return await this.prismaService.user.create({
@@ -32,7 +37,7 @@ export class AuthService {
         },
       });
     } catch (error) {
-      throw new UnauthorizedException('join failed');
+      throw new ForbiddenException('join failed');
     }
   }
 
@@ -77,9 +82,7 @@ export class AuthService {
       // 원래라면 userId라던가 또 다른 정보들을 가지고 refresh토큰을 만들어줘야하지만, 지금은 잠시 고려하지않겠다.
       const accessToken = await this.jwtService.sign(accessTokenPayload);
       const date = new Date();
-      console.log(date);
       date.setSeconds(date.getDate() + 3600);
-      console.log(date);
       await this.prismaService.user_token.upsert({
         where: { user_id: userId },
         update: {

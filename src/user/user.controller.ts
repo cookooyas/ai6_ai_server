@@ -79,6 +79,7 @@ export class UserController {
     description: '정상 응답 (수정된 유저 프로필 이미지 url을 반환한다)',
     type: 'https://ai11dancerflow-upload-user-profile-image.s3.ap-northeast-2.amazonaws.com/%EB%9D%BC%EC%9D%B4%EC%96%B8_1684091515649.png',
   })
+  // 이미지 url이 바뀌면 이전에 저장된 이미지는 날려버리자!
   @Post('/profile/image')
   @UseInterceptors(FileInterceptor('file'))
   async uploadUserProfileImage(

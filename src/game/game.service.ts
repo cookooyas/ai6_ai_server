@@ -159,6 +159,68 @@ export class GameService {
   async calculateScore(id: number, playData) {
     // scoring하는 로직? 계산해서 나온 값을 result라고 하고..
     // this.getScore(id, result) => 유저이면, 낫유저이면..
-    return;
+    console.log(new Date());
+    const { sheet } = await this.prisma.music_answer_sheet.findFirst({
+      where: { music_id: id },
+    });
+    // console.log(sheet);
+    // console.log(data.length);
+    function cartesianToCylindrical(x, y) {
+      const theta = Math.atan2(y, x);
+      return (theta * 180) / Math.PI;
+    }
+    function vectorToTheta(KP, a, b) {
+      const v_x = KP[a].x - KP[b].x;
+      const v_y = KP[a].y - KP[b].y;
+      const theta = cartesianToCylindrical(v_x, v_y);
+      return theta;
+    }
+    const CHECK_POINTS = [
+      [5, 7],
+      [7, 9],
+      [6, 8],
+      [8, 10],
+      [11, 13],
+      [13, 15],
+      [12, 14],
+      [14, 16],
+      [9, 15],
+      [10, 16],
+    ];
+    const answerList = [];
+    for (let i = 1; i < playData.length; i++) {
+      const p_keypoints = playData[i]['keypoints'];
+      const a_idx = sheet[0]['time'] === 0 ? 2 * i : 2 * i - 1;
+      const a_keypoints = sheet[a_idx]['keypoints'];
+      // for문으로 time이 1인 시점 부터 슬라이싱?=> aKP/pKP
+      // p-> time =0
+      // a-> time =0?0.5
+      // time === 1 시작
+
+      // 점수 백분율=> 모든 노래 최고점수의 총합/
+      let score = 0;
+      for (let j = 0; j < CHECK_POINTS.length; j++) {
+        const p_theta = vectorToTheta(
+          p_keypoints,
+          CHECK_POINTS[j][0],
+          CHECK_POINTS[j][1],
+        );
+        const a_theta = vectorToTheta(
+          a_keypoints,
+          CHECK_POINTS[j][0],
+          CHECK_POINTS[j][1],
+        ); //2초단위로 점수를 머리나 상단에 띄운다해요 지금 연산이랑 양이 비슷해요 21*10*2++ db await =>0.08초 0.1초마다 모아서 보내는게 힘들거같다 0.5초단위로 모은걸 보내주겟다 => 4*10*2++db await => ??
+        Math.abs(a_theta - p_theta) < 15 ? score++ : score;
+      }
+      let answer = '';
+      score >= 7
+        ? (answer = 'Perfect')
+        : score >= 4
+        ? (answer = 'Good')
+        : (answer = 'Miss');
+      answerList.push(score);
+    }
+    console.log(new Date());
+    return answerList;
   }
 }

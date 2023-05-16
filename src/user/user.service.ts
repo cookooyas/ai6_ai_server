@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -182,7 +181,15 @@ export class UserService {
       })
       .then(async data => {
         if (data.length > 0) {
-          const { id, music_id, rank, score } = data[0];
+          const { id, music_id, score } = data[0];
+          const found = await this.prismaService.user_score.groupBy({
+            by: ['user_id'],
+            _max: { score: true },
+            where: { music_id: id },
+            orderBy: { _max: { score: 'desc' } },
+          });
+          const rank = found.findIndex(value => value.user_id === userId) + 1;
+
           const { perfect, good, miss } =
             await this.prismaService.user_score_detail.findUnique({
               where: { score_id: id },

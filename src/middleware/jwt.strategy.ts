@@ -56,6 +56,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         expired_in = true;
       }
     }
-    return { user_id, isAdmin, expired_in };
+    return { user_id, isAdmin, expired_in }; //req.user
   }
 }
