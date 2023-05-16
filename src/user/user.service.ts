@@ -17,9 +17,9 @@ export class UserService {
       include: { user_auth: true, user_info: true },
     });
     const { id, user_auth, user_info } = foundUser;
-    const { nickname, profile_image_url, current_tier } = user_info;
+    const { nickname, profile_image_url, xp } = user_info;
     const { email } = user_auth;
-    return { id, nickname, email, profile_image_url, current_tier };
+    return { id, nickname, email, profile_image_url, xp };
   }
 
   // 사용자 정보 수정
