@@ -17,5 +17,5 @@ export class UpdateUserProfile {
   profile_image_url: string;
 
   @ApiProperty({ example: 1 })
-  current_tier: number;
+  xp: number;
 }
