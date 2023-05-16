@@ -3,9 +3,15 @@ export const PAGINATION = {
   DEFAULT_TOP: 5,
 };
 
-export const RANK = ['C', 'B', 'A', 'S', 'SSS'];
-
-export const XP = [-10, 5, 10, 20, 40];
+export const XP = {
+  SSS: 100,
+  S: 50,
+  A: 30,
+  B: 15,
+  C: 10,
+  D: 5,
+  F: 0,
+};
 
 // export enum ERROR_MESSAGE {
 //   NOT_FOUND = '정보를 찾을 수 없습니다.', // 페이지를 찾을 수 없는 건가

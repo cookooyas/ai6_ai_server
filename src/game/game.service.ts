@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PAGINATION, RANK, XP } from '../util/constants';
+import { PAGINATION, XP } from '../util/constants';
 import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
 import { MusicService } from '../music/music.service';
 
@@ -96,7 +96,7 @@ export class GameService {
     };
   }
 
-  async getScore(id: number) {
+  async getScore(id: number, userId: number) {
     const score = await this.prisma.user_score.findUnique({
       where: { id },
     });
@@ -111,18 +111,30 @@ export class GameService {
       throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
     }
 
+    const user = await this.prisma.user_info.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('유저 정보가 존재하지 않습니다.');
+    }
+
     return {
       score: score.score,
-      score_rank: score.rank,
+      rank: score.rank,
       perfect: score_detail.perfect,
+      great: score_detail.great,
       good: score_detail.good,
+      normal: score_detail.normal,
       miss: score_detail.miss,
+      delta_xp: score.delta_xp,
+      xp: user.xp,
     };
   }
 
-  // 프론트가 건네준 사용자 kp 데이터로 scoring 연산하기... 연산한 다음에 동시에 저장해주는 api
-  // 근데 하나씩 보내주는 거면은..? 음 그럼 어떻게 하지???????
-  async saveScore(id: number, userId: number, scoreData) {
+  async saveScore(id: number, userId: number, playData) {
+    const { score, perfect, great, good, normal, miss, rank, delta_xp } =
+      await this.calculateScore(id, playData, true);
+
     // CreateScoreDto 아직 정의 안 함 : 나중에 해주기
     const found = await this.music.getOne(id);
 
@@ -130,9 +142,9 @@ export class GameService {
       data: {
         music_id: id,
         user_id: userId,
-        score: scoreData.score,
-        rank: scoreData.rank,
-        delta_xp: scoreData.delta_xp,
+        score,
+        rank,
+        delta_xp,
       },
     });
 
@@ -141,17 +153,21 @@ export class GameService {
       where: { id: userId },
     });
 
+    const xp = user.xp + delta_xp;
+    console.log('xp: ', xp);
     await this.prisma.user_info.update({
       where: { id: userId },
-      data: { xp: user.xp + scoreData.delta_xp },
+      data: { xp },
     });
 
     await this.prisma.user_score_detail.create({
       data: {
         score_id: new_score.id,
-        perfect: scoreData.perfect,
-        good: scoreData.good,
-        miss: scoreData.miss,
+        perfect,
+        great,
+        good,
+        normal,
+        miss,
       },
     });
 
@@ -167,15 +183,11 @@ export class GameService {
     return new_score.id; // scoreId가 필요한 방향으로 가면 리턴해주기
   }
 
-  async calculateScore(id: number, playData) {
-    // scoring하는 로직? 계산해서 나온 값을 result라고 하고..
-    // this.getScore(id, result) => 유저이면, 낫유저이면..
-    console.log(new Date());
+  async calculateScore(id: number, playData, isUser: boolean) {
     const { sheet } = await this.prisma.music_answer_sheet.findFirst({
       where: { music_id: id },
     });
-    // console.log(sheet);
-    // console.log(data.length);
+
     function cartesianToCylindrical(x, y) {
       const theta = Math.atan2(y, x);
       return (theta * 180) / Math.PI;
@@ -203,16 +215,10 @@ export class GameService {
       const p_keypoints = playData[i]['keypoints'];
       const a_idx = sheet[0]['time'] === 0 ? 2 * i : 2 * i - 1;
       const a_keypoints = sheet[a_idx]['keypoints'];
-      // for문으로 time이 1인 시점 부터 슬라이싱?=> aKP/pKP
-      // p-> time =0
-      // a-> time =0?0.5
-      // time === 1 시작
-      console.log(playData[i]['time']);
-      console.log(sheet[a_idx]['time']);
 
       // 점수 백분율=> 모든 노래 최고점수의 총합/
       let score = 0;
-      const detail = [0, 0, 0];
+      const detail = [0, 0, 0, 0, 0]; // perfect, great, good, normal, miss
       for (let j = 0; j < CHECK_POINTS.length; j++) {
         const p_theta = vectorToTheta(
           p_keypoints,
@@ -223,19 +229,22 @@ export class GameService {
           a_keypoints,
           CHECK_POINTS[j][0],
           CHECK_POINTS[j][1],
-        ); //2초단위로 점수를 머리나 상단에 띄운다해요 지금 연산이랑 양이 비슷해요 21*10*2++ db await =>0.08초 0.1초마다 모아서 보내는게 힘들거같다 0.5초단위로 모은걸 보내주겟다 => 4*10*2++db await => ??
+        );
+
         const degree = Math.abs(a_theta - p_theta);
-        if (degree < 10) {
-          console.log('perfect');
-          score += 1;
+        const cos_score = Math.cos((Math.PI / 180) * degree);
+
+        score = degree <= 70 ? (score += cos_score) : score;
+        if (degree <= 10) {
           detail[0] += 1;
-        } else if (degree < 20) {
-          console.log('good');
-          score += 0.5;
+        } else if (degree <= 20) {
           detail[1] += 1;
-        } else {
-          console.log('miss');
+        } else if (degree <= 40) {
           detail[2] += 1;
+        } else if (degree <= 70) {
+          detail[3] += 1;
+        } else {
+          detail[4] += 1;
         }
       }
       answerList.push({ score, detail });
@@ -246,44 +255,51 @@ export class GameService {
       (acc, cur) => {
         acc.score += cur.score;
         acc.perfect += cur.detail[0];
-        acc.good += cur.detail[1];
-        acc.miss += cur.detail[2];
+        acc.great += cur.detail[1];
+        acc.good += cur.detail[2];
+        acc.normal += cur.detail[3];
+        acc.miss += cur.detail[4];
         acc.frame += 1;
         return acc;
       },
       {
         score: 0,
         perfect: 0,
+        great: 0,
         good: 0,
+        normal: 0,
         miss: 0,
-        frame: 0,
         rank: 'C',
+        frame: 0,
         delta_xp: 0,
       },
     );
 
-    scoreData.score = (scoreData.score / (scoreData.frame * 10)) * 100;
+    const KEYPOINTS = 10;
+    scoreData.score = (scoreData.score / (scoreData.frame * KEYPOINTS)) * 100;
 
-    // C, B, A, S, SSS
-    // 0~59, 60~79, 80~89, 90~99, 100
     const score = scoreData.score;
 
     scoreData.rank =
-      score == 100
+      score >= 95
         ? 'SSS'
         : score >= 90
         ? 'S'
         : score >= 80
         ? 'A'
-        : score >= 60
+        : score >= 70
         ? 'B'
-        : 'C';
+        : score >= 60
+        ? 'C'
+        : score >= 40
+        ? 'D'
+        : 'F';
+    scoreData.delta_xp = XP[scoreData.rank];
 
-    // XP.(scoreData.rank) 이런 식으로는 어떻게..? XP ={ C: -10, ...} 일 때.
-    scoreData.delta_xp = XP[RANK.findIndex(rank => rank === scoreData.rank)];
-
+    if (!isUser) {
+      const { frame, delta_xp, ...guestScore } = scoreData;
+      return { ...guestScore };
+    }
     return scoreData;
-
-    // return this.saveScore(id, userId, scoreData);
   }
 }
