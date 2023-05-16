@@ -196,9 +196,12 @@ export class GameService {
       // p-> time =0
       // a-> time =0?0.5
       // time === 1 시작
+      console.log(playData[i]['time']);
+      console.log(sheet[a_idx]['time']);
 
       // 점수 백분율=> 모든 노래 최고점수의 총합/
       let score = 0;
+      const detail = [0, 0, 0];
       for (let j = 0; j < CHECK_POINTS.length; j++) {
         const p_theta = vectorToTheta(
           p_keypoints,
@@ -211,15 +214,20 @@ export class GameService {
           CHECK_POINTS[j][1],
         ); //2초단위로 점수를 머리나 상단에 띄운다해요 지금 연산이랑 양이 비슷해요 21*10*2++ db await =>0.08초 0.1초마다 모아서 보내는게 힘들거같다 0.5초단위로 모은걸 보내주겟다 => 4*10*2++db await => ??
         const degree = Math.abs(a_theta - p_theta);
-        degree < 10 ? score++ : degree < 20 ? score + 0.5 : score;
+        if (degree < 10) {
+          console.log('perfect');
+          score += 1;
+          detail[0] += 1;
+        } else if (degree < 20) {
+          console.log('good');
+          score += 0.5;
+          detail[1] += 1;
+        } else {
+          console.log('miss');
+          detail[2] += 1;
+        }
       }
-      let answer = '';
-      score >= 7
-        ? (answer = 'Perfect')
-        : score >= 4
-        ? (answer = 'Good')
-        : (answer = 'Miss');
-      answerList.push(score);
+      answerList.push({ score, detail });
     }
     console.log(new Date());
     return answerList;
