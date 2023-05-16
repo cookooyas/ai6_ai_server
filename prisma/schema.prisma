@@ -169,8 +169,9 @@ model user_score {
   music_id          Int                @db.UnsignedInt
   score             Int                @db.UnsignedInt
   rank              user_score_rank
-  is_practice       Boolean            @default(false)
+  delta_xp          Int                @default(0)
   created_at        DateTime           @default(now()) @db.Timestamp(0)
+  is_practice       Boolean            @default(false)
   music             music              @relation(fields: [music_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_score_music_id_fk")
   user              user               @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_score_user_id_fk")
   user_score_detail user_score_detail?
