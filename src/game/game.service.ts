@@ -210,7 +210,8 @@ export class GameService {
           CHECK_POINTS[j][0],
           CHECK_POINTS[j][1],
         ); //2초단위로 점수를 머리나 상단에 띄운다해요 지금 연산이랑 양이 비슷해요 21*10*2++ db await =>0.08초 0.1초마다 모아서 보내는게 힘들거같다 0.5초단위로 모은걸 보내주겟다 => 4*10*2++db await => ??
-        Math.abs(a_theta - p_theta) < 15 ? score++ : score;
+        const degree = Math.abs(a_theta - p_theta);
+        degree < 10 ? score++ : degree < 20 ? score + 0.5 : score;
       }
       let answer = '';
       score >= 7
