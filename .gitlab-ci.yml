@@ -7,4 +7,4 @@ Build NestJS App:
         - npm install
     artifacts:
         paths:
-            /home/gitlab-runner/
+            - /home/gitlab-runner/
