@@ -1,4 +1,5 @@
-run_dev:
-    image: node:latest
-    before_script:
-        - npm i
+Build-nest-js-app:
+    image: node:12.13.0-alpine
+    stage: build
+    script:
+        - npm install
