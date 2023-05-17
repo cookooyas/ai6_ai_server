@@ -1,8 +1,5 @@
 Build NestJS App:
   stage: build
-  before_script:
-    - apt-get update -qy
-    - apt-get install -y nodejs npm
   script:
     - npm install
   artifacts:
