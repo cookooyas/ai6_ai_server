@@ -140,31 +140,33 @@ export class UserService {
         const total_length = data.length;
         maxPage = Math.ceil(total_length / 5);
         pageno = pageno > maxPage ? maxPage : pageno;
-        for (let i = 0; i < 5; i++) {
-          const idx = i + (pageno - 1) * 5;
-          if (idx + 1 > data.length) break;
-          const music_id = data[idx].music_id;
-          const { name, album_image_url, music_singer } =
-            await this.prismaService.music.findUnique({
-              where: { id: music_id },
-              include: { music_singer: true },
+        if (total_length !== 0) {
+          for (let i = 0; i < 5; i++) {
+            const idx = i + (pageno - 1) * 5;
+            if (idx + 1 > data.length) break;
+            const music_id = data[idx].music_id;
+            const { name, album_image_url, music_singer } =
+              await this.prismaService.music.findUnique({
+                where: { id: music_id },
+                include: { music_singer: true },
+              });
+            const { total_score } =
+              await this.prismaService.music_answer.findUnique({
+                where: { music_id },
+              });
+            const { score } = await this.prismaService.user_score.findFirst({
+              where: { user_id: userId, music_id },
+              orderBy: { score: 'desc' },
             });
-          const { total_score } =
-            await this.prismaService.music_answer.findUnique({
-              where: { music_id },
+            historyList.push({
+              music_id,
+              music_name: name,
+              album_image_url,
+              music_singer: music_singer.name,
+              user_music_best_score: score,
+              music_total_score: total_score,
             });
-          const { score } = await this.prismaService.user_score.findFirst({
-            where: { user_id: userId, music_id },
-            orderBy: { score: 'desc' },
-          });
-          historyList.push({
-            music_id,
-            music_name: name,
-            album_image_url,
-            music_singer: music_singer.name,
-            user_music_best_score: score,
-            music_total_score: total_score,
-          });
+          }
         }
       });
     return { historyList, maxPage };
