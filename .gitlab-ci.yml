@@ -1,10 +1,10 @@
-stages:
-    - build
-
 Build NestJS App:
-    stage: build
-    script:
-        - npm install
-    artifacts:
-        paths:
-            - /home/gitlab-runner/
+  stage: build
+  before_script:
+    - apt-get update -qy
+    - apt-get install -y nodejs npm
+  script:
+    - npm install
+  artifacts:
+    paths:
+      - /home/gitlab-runner/
