@@ -1,5 +1,7 @@
 Build NestJS App:
   stage: build
+  before_script:
+    apk add --update npm
   script:
     - npm install
   artifacts:
