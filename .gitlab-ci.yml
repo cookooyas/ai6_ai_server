@@ -1,0 +1,4 @@
+run_dev:
+    image: node:latest
+    before_script:
+        - npm i
