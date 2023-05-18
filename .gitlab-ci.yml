@@ -8,3 +8,5 @@ deploy:
   image: alpine
   script:
     - apk add --no-cache openssh-client
+    - sshpass -p "$SSH_PASSWORD" ssh -p 22 "$SSH_USER"@"$SSH_HOST"
+
