@@ -15,6 +15,7 @@ export const ERROR_MESSAGE = {
       NICKNAME: '닉네임이 입력되지 않았습니다.',
       EMAIL: '이메일이 입력되지 않았습니다.',
     },
+    ITEM: '아이템 정보를 찾을 수 없습니다.',
   },
   CONFLICT: {
     // 409
