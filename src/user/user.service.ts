@@ -194,7 +194,7 @@ export class UserService {
           });
           const rank = found.findIndex(value => value.user_id === userId) + 1;
 
-          const { perfect, good, miss } =
+          const { perfect, great, good, normal, miss } =
             await this.prismaService.user_score_detail.findUnique({
               where: { score_id: id },
             });
@@ -212,7 +212,15 @@ export class UserService {
           }
           result = {
             music_id,
-            music_best_score_detail: { score, rank, perfect, good, miss },
+            music_best_score_detail: {
+              score,
+              rank,
+              perfect,
+              great,
+              good,
+              normal,
+              miss,
+            },
             music_total_score: total_score,
             music_score_list: historyList.sort(
               (a, b) =>
