@@ -3,26 +3,26 @@ export const PAGINATION = {
   DEFAULT_TOP: 5,
 };
 
-export const XP = {
-  SSS: 100,
-  S: 50,
-  A: 30,
-  B: 15,
-  C: 10,
-  D: 5,
-  F: 0,
+export const KEYPOINT = 10;
+
+export const DEGREE_STANDARD = {
+  PERFECT: 10,
+  GREAT: 20,
+  GOOD: 40,
+  NORMAL: 70,
 };
 
-// export enum ERROR_MESSAGE {
-//   NOT_FOUND = '정보를 찾을 수 없습니다.', // 페이지를 찾을 수 없는 건가
-//   // 생성할 때 중복값 있어서 에러
-//   // 생성할 때 어쩌구 저쩌구 에러
-//   // 타입 에러 등등
-//   // 토큰 에러
-// }
-//
-// export enum HTTP_STATUS {
-//   OK = 200,
-// }
-//
-// // 에러 핸들러 미들웨어 작성하기... httpException extend 시켜서 하나 (statusCode, error, message) 그냥 function으로 정의하나
+export const CHECK_POINTS: number[][] = [
+  [5, 7],
+  [7, 9],
+  [6, 8],
+  [8, 10],
+  [11, 13],
+  [13, 15],
+  [12, 14],
+  [14, 16],
+  [9, 15],
+  [10, 16],
+];
+
+export const CHECK_POINTS_LENGTH = CHECK_POINTS.length;

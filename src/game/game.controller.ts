@@ -48,13 +48,6 @@ export class GameController {
     );
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('ranking/my/:musicId')
-  myBestScoreByMusic(@Param('musicId') id: number, @Req() req) {
-    const { user_id } = req.user;
-    return this.gameService.myBestScoreByMusic(id, user_id);
-  }
-
   @Get('answer/:musicId')
   getAnswer(@Param('musicId') id: number) {
     return this.gameService.getAnswer(id);
@@ -75,13 +68,11 @@ export class GameController {
     @Req() req,
   ) {
     const { user_id } = req.user;
-    // 점수 계산과 동시에 점수 저장까지 하게 해주나? -> 해준다
     return this.gameService.saveScore(id, user_id, playData);
   }
 
   @Post('result/guest/:musicId')
   calculateScoreForGuest(@Param('musicId') id: number, @Body() playData) {
-    // 점수 계산과 동시에 점수 저장까지 하게 해주나? -> 해준다
     return this.gameService.calculateScore(id, playData, false);
   }
 }
