@@ -1,11 +1,9 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import * as bcrypt from 'bcryptjs';
+import { ERROR_MESSAGE } from '../util/error';
+
 @Injectable()
 export class UserService {
   constructor(private prismaService: PrismaService) {}
@@ -29,7 +27,10 @@ export class UserService {
       if (
         await this.prismaService.user_info.findUnique({ where: { nickname } })
       ) {
-        throw new UnauthorizedException(`${nickname} is already exist.`);
+        throw new HttpException(
+          ERROR_MESSAGE.CONFLICT.USER.NICKNAME,
+          HttpStatus.CONFLICT,
+        );
       }
 
       await this.prismaService.user_info.update({
@@ -48,7 +49,10 @@ export class UserService {
       if (await bcrypt.compare(current_password, foundUserAuth.password)) {
         const salt = await bcrypt.genSalt();
         if (current_password === new_password) {
-          throw new UnauthorizedException('password not match');
+          throw new HttpException(
+            ERROR_MESSAGE.UNAUTHORIZED.PASSWORD,
+            HttpStatus.UNAUTHORIZED,
+          );
         }
         const hashedPassword = await bcrypt.hash(new_password, salt);
         await this.prismaService.user_auth.update({
@@ -56,7 +60,10 @@ export class UserService {
           data: { password: hashedPassword },
         });
       } else {
-        throw new UnauthorizedException('password not match');
+        throw new HttpException(
+          ERROR_MESSAGE.UNAUTHORIZED.PASSWORD,
+          HttpStatus.UNAUTHORIZED,
+        );
       }
     }
     return 'request success';
@@ -65,7 +72,10 @@ export class UserService {
   // 사용자 프로필 이미지 수정(업로드)
   async uploadUserProfileImage(userId: number, file: Express.MulterS3.File) {
     if (!file) {
-      throw new BadRequestException('there is no files');
+      throw new HttpException(
+        ERROR_MESSAGE.BAD_REQUEST.FILE,
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const filePath = file.location;
     await this.prismaService.user_info.update({
@@ -83,7 +93,7 @@ export class UserService {
     year: string,
     month: string,
   ): Promise<object[]> {
-    return await this.prismaService.user_play_log.findMany({
+    const calendar = await this.prismaService.user_play_log.findMany({
       where: {
         user_id: userId,
         created_at: {
@@ -99,6 +109,7 @@ export class UserService {
       orderBy: { created_at: 'asc' },
       select: { created_at: true },
     });
+    return calendar;
   }
 
   // 사용자 찜 리스트 조회
@@ -123,7 +134,6 @@ export class UserService {
         },
       },
     });
-
     return { userLikes, maxPage };
   }
 
