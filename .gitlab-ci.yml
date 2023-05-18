@@ -8,15 +8,14 @@ stages:
     - test
     - deploy
 
-before_script:
-    - sudo apt-get install -y npm
-    - npm install
 
 build:
     image: node:12.13.0-alpine
     stage: build
     tags:
       - ci
+    before_script:
+        - npm install
     script:
         - npm run build
     artifacts:
