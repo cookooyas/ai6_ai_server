@@ -3,9 +3,13 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateGenreDto } from '../../dto/create-genre.dto';
 import { GenreService } from './genre.service';
@@ -18,6 +22,8 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { ERROR_MESSAGE } from '../../util/error';
 
 @Controller('genre')
 @ApiTags('장르 API')
@@ -34,7 +40,7 @@ export class GenreController {
     type: [GetGenreInfoDto],
   })
   @Get()
-  getAll() {
+  getAll(): Promise<GetGenreInfoDto[]> {
     return this.genreService.getAll();
   }
 
@@ -49,7 +55,7 @@ export class GenreController {
     type: GetGenreInfoDto,
   })
   @Get(':genreId')
-  getOne(@Param('genreId') id: number) {
+  getOne(@Param('genreId') id: number): Promise<GetGenreInfoDto> {
     return this.genreService.getOne(id);
   }
 
@@ -62,8 +68,16 @@ export class GenreController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() genreData: CreateGenreDto) {
+  create(@Body() genreData: CreateGenreDto, @Req() req): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.genreService.create(genreData);
   }
 
@@ -77,8 +91,20 @@ export class GenreController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':genreId')
-  patch(@Param('genreId') id: number, @Body() updateData: UpdateGenreDto) {
+  patch(
+    @Param('genreId') id: number,
+    @Body() updateData: UpdateGenreDto,
+    @Req() req,
+  ): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.genreService.patch(id, updateData);
   }
 
@@ -91,8 +117,16 @@ export class GenreController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':genreId')
-  remove(@Param('genreId') id: number) {
+  remove(@Param('genreId') id: number, @Req() req): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.genreService.remove(id);
   }
 }
