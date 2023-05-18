@@ -195,14 +195,16 @@ export class UserService {
       })
       .then(async data => {
         if (data.length > 0) {
-          const { id, music_id, score } = data[0];
+          const { id, music_id, score, rank } = data[0];
           const found = await this.prismaService.user_score.groupBy({
             by: ['user_id'],
             _max: { score: true },
-            where: { music_id: id },
+            where: { music_id: musicId },
             orderBy: { _max: { score: 'desc' } },
           });
-          const rank = found.findIndex(value => value.user_id === userId) + 1;
+          console.log(found);
+          const user_rank =
+            found.findIndex(value => value.user_id === userId) + 1;
 
           const { perfect, great, good, normal, miss } =
             await this.prismaService.user_score_detail.findUnique({
@@ -224,7 +226,8 @@ export class UserService {
             music_id,
             music_best_score_detail: {
               score,
-              rank,
+              user_rank,
+              score_rank: rank,
               perfect,
               great,
               good,
