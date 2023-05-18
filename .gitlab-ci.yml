@@ -5,7 +5,7 @@ deploy:
   stage: deploy
   image: ubuntu:latest
   script:
-    - apt-get update && apt-get install -y openssh-client
+    - apt-get update && apt-get install -y sshpass
     - sshpass -p "$SSH_PASSWORD" ssh -p 22 "$SSH_USER"@"$SSH_HOST"
     - ls -la
  
