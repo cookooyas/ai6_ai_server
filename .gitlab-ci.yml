@@ -1,10 +1,10 @@
 image: ubuntu:latest
 
 stages:
-  - build
+  - deploy
 
-build-code-job:
-  stage: build
+deploy:
+  stage: deploy
+  image: alpine
   script:
-    - echo "test 11team hj"
-    - ls
+    - apk add --no-cache openssh-client
