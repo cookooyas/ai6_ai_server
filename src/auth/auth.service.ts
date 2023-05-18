@@ -86,6 +86,12 @@ export class AuthService {
       where: { email },
       include: { user: true },
     });
+    if (!foundUserAuth) {
+      throw new HttpException(
+        ERROR_MESSAGE.UNAUTHORIZED.USER_DELETED,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
     const userId = foundUserAuth.user.id;
     if (foundUserAuth.user.deleted_at) {
       throw new HttpException(

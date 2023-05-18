@@ -195,6 +195,7 @@ export class UserService {
         distinct: ['created_at'],
       })
       .then(async data => {
+        console.log(data);
         if (data.length > 0) {
           const { id, music_id, score, rank } = data[0];
           const found = await this.prismaService.user_score.groupBy({
@@ -217,11 +218,36 @@ export class UserService {
             });
           for (let i = 0; i < data.length; i++) {
             const { score, created_at } = data[i];
-
+            const time = created_at.toLocaleDateString();
             historyList.push({
               music_score: score,
-              music_score_created_at: created_at,
+              music_score_created_at: time,
             });
+          }
+          function filterHistoryList(historyList) {
+            const filteredList = [];
+
+            // time 값을 기준으로 그룹화
+            const groupedData = {};
+            historyList.forEach(obj => {
+              const { music_score, music_score_created_at } = obj;
+              if (
+                !groupedData[music_score_created_at] ||
+                score > groupedData[music_score_created_at].score
+              ) {
+                groupedData[music_score_created_at] = {
+                  music_score_created_at,
+                  music_score,
+                };
+              }
+            });
+
+            // 필터링된 값들을 새로운 배열에 추가
+            for (const key in groupedData) {
+              filteredList.push(groupedData[key]);
+            }
+
+            return filteredList;
           }
           result = {
             music_id,
@@ -236,10 +262,11 @@ export class UserService {
               miss,
             },
             music_total_score: total_score,
-            music_score_list: historyList.sort(
-              (a, b) =>
-                a['music_score_created_at'] - b['music_score_created_at'],
-            ),
+            music_score_list: filterHistoryList(historyList).sort((a, b) => {
+              const dateA = new Date(a.music_score_created_at);
+              const dateB = new Date(b.music_score_created_at);
+              return dateA.getTime() - dateB.getTime();
+            }),
           };
         }
       });
