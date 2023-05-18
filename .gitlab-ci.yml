@@ -6,7 +6,7 @@ stages:
 build-code-job:
   stage: build
   script:
-    - apt update && apt install -y sshpass
+    - apt-get update && apt-get install -y sshpass
     - sshpass -p "$SSH_PASSWORD" ssh -p 22 "$SSH_USER"@"$SSH_HOST"
     - echo "test 11team hj"
     - ls
