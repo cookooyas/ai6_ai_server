@@ -1,7 +1,6 @@
 import {
   Controller,
   Req,
-  Res,
   Body,
   Query,
   Get,

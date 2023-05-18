@@ -3,6 +3,8 @@ import {
   UnauthorizedException,
   NotFoundException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { user } from '@prisma/client';
 import { AuthCredentialDto } from './dto/authCredential.dto';
@@ -11,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { error } from 'console';
+import { ERROR_MESSAGE } from '../util/error';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +40,10 @@ export class AuthService {
         },
       });
     } catch (error) {
-      throw new ForbiddenException('join failed');
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.JOIN,
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 
@@ -45,7 +51,17 @@ export class AuthService {
   async checkDuplication(type: 'email' | 'nickname', value): Promise<boolean> {
     const { email, nickname } = value;
     if (!email && !nickname) {
-      throw new NotFoundException(`there is no ${type} in Body.`);
+      if (type === 'email') {
+        throw new HttpException(
+          ERROR_MESSAGE.NOT_FOUND.BODY.EMAIL,
+          HttpStatus.NOT_FOUND,
+        );
+      } else {
+        throw new HttpException(
+          ERROR_MESSAGE.NOT_FOUND.BODY.NICKNAME,
+          HttpStatus.NOT_FOUND,
+        );
+      }
     }
     const result =
       type === 'email'
@@ -72,7 +88,10 @@ export class AuthService {
     });
     const userId = foundUserAuth.user.id;
     if (foundUserAuth.user.deleted_at) {
-      throw new UnauthorizedException('this user was deleted.');
+      throw new HttpException(
+        ERROR_MESSAGE.UNAUTHORIZED.USER_DELETED,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     if (
       foundUserAuth &&
@@ -97,7 +116,10 @@ export class AuthService {
       });
       return { accessToken };
     } else {
-      throw new UnauthorizedException('login failed');
+      throw new HttpException(
+        ERROR_MESSAGE.UNAUTHORIZED.LOGIN,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
