@@ -1,22 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateMusicDto } from '../dto/update-music.dto';
-import { PAGINATION } from '../util/constants';
+// import { PAGINATION } from '../util/constants';
 import { CreateMusicDto } from '../dto/create-music.dto';
 import { GetMusicListDto } from '../dto/get-music-list-dto';
 import { GetMusicInfoDto } from '../dto/get-music-info.dto';
 import { music, user_likes } from '@prisma/client';
+import { ERROR_MESSAGE } from '../util/error';
 
 @Injectable()
 export class MusicService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(sort: string, page: number) {
-    const count: number = await this.prisma.music.count({
-      where: { deleted_at: null },
-    });
-    const maxPage: number = Math.ceil(count / PAGINATION.DEFAULT_PER_PAGE);
-    page = page < 1 ? 1 : Math.min(page, maxPage);
+  async getAll(sort: string, page: number): Promise<GetMusicListDto[]> {
+    // const count: number = await this.prisma.music.count({
+    //   where: { deleted_at: null },
+    // });
+    // const maxPage: number = Math.ceil(count / PAGINATION.DEFAULT_PER_PAGE);
+    // page = page < 1 ? 1 : Math.min(page, maxPage);
 
     let musics: GetMusicListDto[];
     switch (sort) {
@@ -31,7 +32,6 @@ export class MusicService {
             music_singer: { select: { id: true, name: true } },
             album_image_url: true,
           },
-          // 페이지네이션 차후 재구현
           // skip: (page - 1) * PAGINATION.DEFAULT_PER_PAGE,
           // take: PAGINATION.DEFAULT_PER_PAGE,
         });
@@ -85,7 +85,7 @@ export class MusicService {
     return musics;
   }
 
-  async getOne(id: number) {
+  async getOne(id: number): Promise<GetMusicInfoDto> {
     const musicInfo: GetMusicInfoDto = await this.prisma.music.findFirst({
       where: { id, deleted_at: null },
       select: {
@@ -99,14 +99,16 @@ export class MusicService {
         played: true,
       },
     });
-    // 나중에 에러처리 따로 빼주기
     if (!musicInfo) {
-      throw new NotFoundException('해당 곡 정보를 찾을 수 없습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.MUSIC,
+        HttpStatus.NOT_FOUND,
+      );
     }
     return musicInfo;
   }
 
-  async searchMusic(search: string) {
+  async searchMusic(search: string): Promise<GetMusicListDto[]> {
     const musics: GetMusicListDto[] = await this.prisma.music.findMany({
       orderBy: { created_at: 'desc' },
       where: {
@@ -126,18 +128,24 @@ export class MusicService {
     return musics;
   }
 
-  async create(musicData: CreateMusicDto) {
+  async isDuplicated(name, singer_id): Promise<void> {
+    const found: music = await this.prisma.music.findFirst({
+      where: { name, singer_id },
+    });
+    if (found) {
+      throw new HttpException(
+        ERROR_MESSAGE.CONFLICT.MUSIC,
+        HttpStatus.CONFLICT,
+      );
+    }
+    return;
+  }
+
+  async create(musicData: CreateMusicDto): Promise<void> {
     const { video_url, sheet, total_count, total_score, ...musicInfo } =
       musicData;
 
-    // 같은 가수의 같은 곡이 생기면 곤란
-    const found: music = await this.prisma.music.findFirst({
-      where: { name: musicInfo.name, singer_id: musicInfo.singer_id },
-    });
-    if (found) {
-      // NotFound가 아니라 중복이 겹쳐서 생기는 오류인데 어떻게 명명해야 할까?
-      throw new NotFoundException('같은 곡의 정보가 존재합니다.');
-    }
+    await this.isDuplicated(musicInfo.name, musicInfo.singer_id);
 
     const music: music = await this.prisma.music.create({ data: musicInfo });
     await this.prisma.music_answer.create({
@@ -157,8 +165,9 @@ export class MusicService {
     return;
   }
 
-  async patch(id: number, updateData: UpdateMusicDto) {
+  async patch(id: number, updateData: UpdateMusicDto): Promise<void> {
     await this.getOne(id);
+    await this.isDuplicated(updateData.name, updateData.singer_id);
     await this.prisma.music.update({
       where: { id },
       data: updateData,
@@ -166,7 +175,7 @@ export class MusicService {
     return;
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<void> {
     const musicInfo: GetMusicInfoDto = await this.getOne(id);
     await this.prisma.music.update({
       where: { id },
@@ -178,8 +187,18 @@ export class MusicService {
     return;
   }
 
-  async like(id: number, user_id: number) {
+  async isInLikeList(user_id, music_id): Promise<boolean> {
+    const found: user_likes = await this.prisma.user_likes.findFirst({
+      where: { user_id, music_id },
+    });
+    return !!found;
+  }
+
+  async like(id: number, user_id: number): Promise<void> {
     await this.getOne(id);
+    if (await this.isInLikeList(user_id, id)) {
+      throw new HttpException(ERROR_MESSAGE.CONFLICT.LIKE, HttpStatus.CONFLICT);
+    }
     await this.prisma.music.update({
       where: { id },
       data: { likes: { increment: 1 } },
@@ -193,8 +212,14 @@ export class MusicService {
     return;
   }
 
-  async unlike(id: number, user_id: number) {
+  async unlike(id: number, user_id: number): Promise<void> {
     await this.getOne(id);
+    if (!(await this.isInLikeList(user_id, id))) {
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.LIKE,
+        HttpStatus.NOT_FOUND,
+      );
+    }
     await this.prisma.music.update({
       where: { id },
       data: { likes: { decrement: 1 } },
@@ -205,7 +230,7 @@ export class MusicService {
     return;
   }
 
-  async islike(id: number, user_id: number) {
+  async islike(id: number, user_id: number): Promise<boolean> {
     const found: user_likes = await this.prisma.user_likes.findFirst({
       where: { music_id: id, user_id },
     });
