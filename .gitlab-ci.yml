@@ -6,9 +6,6 @@ deploy:
   image: ubuntu:latest
   script:
     - apt-get update && apt-get install -y openssh-client
-    - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh -o StrictHostKeyChecking=no -p 22 "$SSH_USER"@"$SSH_HOST"
+    - sshpass -p "$SSH_PASSWORD" ssh -p 22 "$SSH_USER"@"$SSH_HOST"
     - ls -la
  
