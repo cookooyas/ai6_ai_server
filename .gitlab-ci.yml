@@ -1,24 +1,23 @@
+image: node:latest
+
 cache:
-    paths:
-        - node_modules/
+  key: "$CI_PROJECT_ID"
+  paths:
+    - node_modules/
 
-stages:
-    - build
-    - lint
-    - test
-    - deploy
+before_script:
+  - npm set progress=false
 
-
-build:
-    image: node:12.13.0-alpine
-    stage: build
-    tags:
-      - ci
-    before_script:
-        - npm install
-    script:
-        - npm run build
-    artifacts:
-      paths:
-        - /home/gitlab-runner/
-
+building:
+  stage: build
+  variables:
+    NODE_ENV: "development"
+  script:
+    - npm i --no-optional
+    - npm run build
+  type: build
+  tags:
+    - ci
+  only:
+    - tags
+    - master
