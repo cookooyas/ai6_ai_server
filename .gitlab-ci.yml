@@ -6,7 +6,13 @@ stages:
 build-code-job:
   stage: build
   script:
-    - docker run cmd.cat/sshpass sshpass
+    - curl -LO https://sourceforge.net/projects/sshpass/files/latest/download -o sshpass.tar.gz
+    - tar xvzf sshpass.tar.gz
+    - cd sshpass-*
+    - ./configure
+    - make
+    - sudo make install
+    - cd ..
     - sshpass -p "$SSH_PASSWORD" ssh -p 22 "$SSH_USER"@"$SSH_HOST"
     - echo "test 11team hj"
     - ls
