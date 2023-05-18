@@ -6,6 +6,6 @@ deploy:
   image: ubuntu:latest
   script:
     - apt-get update && apt-get install -y sshpass
-    - sshpass -p "$SSH_PASSWORD" ssh "$SSH_USER"@"$SSH_HOST"
+    - sshpass -p"$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - ls -la
  
