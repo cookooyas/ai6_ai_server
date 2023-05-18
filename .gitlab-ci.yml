@@ -9,5 +9,6 @@ deploy:
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - ssh -o StrictHostKeyChecking=no -p 22 "$SSH_USER"@"$SSH_HOST" ls -la
+    - ssh -o StrictHostKeyChecking=no -p 22 "$SSH_USER"@"$SSH_HOST"
+    - ls -la
  
