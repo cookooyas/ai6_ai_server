@@ -12,6 +12,7 @@ model item {
   name       String      @unique(map: "name") @db.VarChar(255)
   image_url  String      @db.VarChar(255)
   created_at DateTime    @default(now()) @db.Timestamp(0)
+  user_info  user_info[]
   user_item  user_item[]
 }
 
@@ -119,9 +120,12 @@ model user_info {
   nickname          String @unique(map: "nickname") @db.VarChar(50)
   profile_image_url String @default("https://ai11dancerflow-upload-user-profile-image.s3.ap-northeast-2.amazonaws.com/default.jpg") @db.VarChar(255)
   xp                Int    @default(0) @db.UnsignedInt
+  item_id           Int    @default(1) @db.UnsignedInt
+  item              item   @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_item__fk")
   user              user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_info_user_id_fk")
 
   @@index([xp], map: "user_info_tier_id_fk")
+  @@index([item_id], map: "user_info_item__fk")
 }
 
 model user_item {

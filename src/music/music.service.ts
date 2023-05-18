@@ -105,7 +105,16 @@ export class MusicService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return musicInfo;
+
+    const result = { ...musicInfo, answer: true };
+    const musicAnswer = await this.prisma.music_answer.findUnique({
+      where: { music_id: id },
+    });
+    if (!musicAnswer) {
+      result.answer = false;
+    }
+
+    return result;
   }
 
   async searchMusic(search: string): Promise<GetMusicListDto[]> {
