@@ -53,9 +53,5 @@ export class CreateMusicDto {
   @ApiProperty({ example: {} })
   @IsNotEmpty()
   @IsJSON()
-  readonly sheet: number[][][]; // 수정 필요 + json으로 못 받나?
+  readonly sheet: object; // object 아님, 잘못됨
 }
-
-/*
-[[첫번쨰 이미지의 [머리 좌표(x,y,c), 다리 좌표 (x,y,c)]], [두번째 이미지의 ...]]
- */

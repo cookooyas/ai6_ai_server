@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -24,13 +26,12 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { GetMusicListDto } from '../dto/get-music-list-dto';
 import { GetMusicInfoDto } from '../dto/get-music-info.dto';
+import { ERROR_MESSAGE } from '../util/error';
 
 @Controller('music')
 @ApiTags('뮤직 API')
 export class MusicController {
   constructor(private readonly musicService: MusicService) {}
-
-  // 에러 코드 표 나중에 작성하기.
 
   @ApiOperation({
     summary: '정렬한 뮤직 리스트 조회 API',
@@ -55,7 +56,10 @@ export class MusicController {
     type: [GetMusicListDto],
   })
   @Get()
-  getAll(@Query('sort') sort?: string, @Query('page') page?: number) {
+  getAll(
+    @Query('sort') sort?: string,
+    @Query('page') page?: number,
+  ): Promise<GetMusicListDto[]> {
     return this.musicService.getAll(sort, page ? Math.floor(page) : 1);
   }
 
@@ -70,7 +74,7 @@ export class MusicController {
     type: GetMusicInfoDto,
   })
   @Get(':musicId')
-  getOne(@Param('musicId') id: number) {
+  getOne(@Param('musicId') id: number): Promise<GetMusicInfoDto> {
     return this.musicService.getOne(id);
   }
 
@@ -85,27 +89,33 @@ export class MusicController {
     type: [GetMusicListDto],
   })
   @Get('/search/:keyword')
-  searchMusic(@Param('keyword') keyword: string) {
+  searchMusic(@Param('keyword') keyword: string): Promise<GetMusicListDto[]> {
     // 공백으로만 이루어진 문자열은 안 됨, 걸러내야 하는데... -> regex
     return this.musicService.searchMusic(keyword.trim());
   }
 
-  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 생성 API',
     description: '보낸 정보를 토대로 뮤직 정보를 생성한다.',
   })
-  @ApiBody({ type: CreateMusicDto }) // 아직 작성 안 함
+  @ApiBody({ type: CreateMusicDto })
   @ApiOkResponse({
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() musicData: CreateMusicDto) {
+  create(@Body() musicData: CreateMusicDto, @Req() req) {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.musicService.create(musicData);
   }
 
-  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 수정 API',
     description: '보낸 정보를 토대로 뮤직 정보를 수정한다.',
@@ -116,12 +126,23 @@ export class MusicController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':musicId')
-  patch(@Param('musicId') id: number, @Body() updateData: UpdateMusicDto) {
+  patch(
+    @Param('musicId') id: number,
+    @Body() updateData: UpdateMusicDto,
+    @Req() req,
+  ): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.musicService.patch(id, updateData);
   }
 
-  // 관리자가 해야함
   @ApiOperation({
     summary: '뮤직 삭제 API',
     description: '보낸 정보를 토대로 뮤직 정보를 삭제한다.',
@@ -131,8 +152,16 @@ export class MusicController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':musicId')
-  remove(@Param('musicId') id: number) {
+  remove(@Param('musicId') id: number, @Req() req): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.musicService.remove(id);
   }
 
@@ -147,7 +176,7 @@ export class MusicController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Patch('like/:musicId')
-  like(@Param('musicId') id: number, @Req() req) {
+  like(@Param('musicId') id: number, @Req() req): Promise<void> {
     const { user_id } = req.user;
     return this.musicService.like(id, user_id);
   }
@@ -163,14 +192,14 @@ export class MusicController {
   })
   @UseGuards(AuthGuard('jwt'))
   @Delete('like/:musicId')
-  unlike(@Param('musicId') id: number, @Req() req) {
+  unlike(@Param('musicId') id: number, @Req() req): Promise<void> {
     const { user_id } = req.user;
     return this.musicService.unlike(id, user_id);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('like/:musicId')
-  islike(@Param('musicId') id: number, @Req() req) {
+  islike(@Param('musicId') id: number, @Req() req): Promise<boolean> {
     const { user_id } = req.user;
     return this.musicService.islike(id, user_id);
   }
