@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import * as bcrypt from 'bcryptjs';
 import { ERROR_MESSAGE } from '../util/error';
+import { treeKillSync } from '@nestjs/cli/lib/utils/tree-kill';
 
 @Injectable()
 export class UserService {
@@ -243,5 +244,57 @@ export class UserService {
         }
       });
     return result;
+  }
+
+  // 전체 아이템 조회
+  async getAllItem() {
+    const items = await this.prismaService.item.findMany({
+      select: {
+        id: true,
+        name: true,
+        image_url: true,
+      },
+    });
+    return items;
+  }
+
+  async getOneItem(id) {
+    console.log(1);
+    console.log(id);
+    const found = await this.prismaService.item.findUnique({
+      where: { id },
+    });
+    if (!found) {
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.ITEM,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return;
+  }
+
+  async getClothedItem(userId) {
+    const user = await this.prismaService.user_info.findUnique({
+      where: { id: userId },
+      select: {
+        item: {
+          select: { id: true, name: true, image_url: true },
+        },
+      },
+    });
+    return {
+      id: user.item.id,
+      name: user.item.name,
+      image_url: user.item.image_url,
+    };
+  }
+
+  async changeItem(itemId, userId) {
+    await this.getOneItem(itemId);
+    await this.prismaService.user_info.update({
+      where: { user_id: userId },
+      data: { item_id: itemId },
+    });
+    return;
   }
 }

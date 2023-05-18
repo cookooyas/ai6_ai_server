@@ -163,4 +163,23 @@ export class UserController {
     const { user_id } = req.user;
     return await this.userService.findOneGameHistory(+user_id, +musicId);
   }
+
+  @Get('/item/all')
+  getAllItem() {
+    return this.userService.getAllItem();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/item')
+  getClothedItem(@Req() req) {
+    const { user_id } = req.user;
+    return this.userService.getClothedItem(user_id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('/item/:itemId')
+  changeItem(@Param('itemId') itemId: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.userService.changeItem(itemId, user_id);
+  }
 }
