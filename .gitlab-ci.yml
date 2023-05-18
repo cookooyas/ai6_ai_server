@@ -1,5 +1,3 @@
-image: node:latest
-
 cache:
     paths:
         - node_modules/
@@ -15,6 +13,7 @@ before_script:
     - npm install
 
 build:
+    image: node:12.13.0-alpine
     stage: build
     tags:
       - ci
