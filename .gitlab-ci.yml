@@ -1,18 +1,25 @@
 image: node:latest
 
-stages:
-  - build
-  - run
-
-# Job's name
-first-job:
-  # Define stage
-  stage: build
-  # What to run on the job.
-  tags:
-    - "ci"
-  script:
-    - npm install
-  artifacts:
+cache:
     paths:
-      - /home/gitlab-runner/
+        - node_modules/
+
+stages:
+    - build
+    - lint
+    - test
+    - deploy
+
+before_script:
+    - npm install
+
+build:
+    stage: build
+    tags:
+      - ci
+    script:
+        - npm run build
+    artifacts:
+      paths:
+        - /home/gitlab-runner/
+
