@@ -3,9 +3,9 @@ stages:
 
 deploy:
   stage: deploy
-  image: alpine
+  image: ubuntu
   script:
-    - apk add --no-cache openssh-client
+    - apt-get update && apt-get install -y openssh-client
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
