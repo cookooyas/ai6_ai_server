@@ -114,10 +114,14 @@ export class UserService {
   }
 
   // 사용자 찜 리스트 조회
-  async findLikes(userId: number, pageno: number, perpage): Promise<any> {
+  async findLikes(
+    userId: number,
+    pageno: number,
+    perpage: number,
+  ): Promise<any> {
     let total_length;
     let maxPage = 1;
-    const perPage = perpage ? perpage : 6;
+    const perPage = perpage;
     await this.prismaService.user_likes
       .findMany({
         where: { user_id: userId },

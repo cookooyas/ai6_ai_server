@@ -123,9 +123,17 @@ export class UserController {
     description: '정상 응답 (유저 찜 리스트를 반환한다.)',
   })
   @Get('/likes')
-  async findLikes(@Req() req, @Query('pageno') pageno: string) {
+  async findLikes(
+    @Req() req,
+    @Query('pageno') pageno: string,
+    @Query('perpage') perpage: string,
+  ) {
     const { user_id } = req.user;
-    return await this.userService.findLikes(+user_id, pageno ? +pageno : 0);
+    return await this.userService.findLikes(
+      +user_id,
+      pageno ? +pageno : 0,
+      perpage ? +perpage : 6,
+    );
   }
 
   @ApiOperation({
