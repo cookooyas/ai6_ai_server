@@ -3,7 +3,6 @@ stages:
 
 deploy:
   stage: build
-  image: npm:latest
+  image: ubuntu:latest
   script:
-    - npm i
     - ls
