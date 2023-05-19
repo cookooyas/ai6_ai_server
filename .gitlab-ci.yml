@@ -1,16 +1,9 @@
 stages:
-  - deploy
+  - build
 
 deploy:
-  stage: deploy
-  image: ubuntu:latest
+  stage: build
+  image: npm:latest
   script:
-    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
-    - source ~/.bashrc
-    - nvm install 16.14.0
-    - nvm use 16.14.0
-    - apt-get update && apt-get install -y sshpass
-    - echo $SSH_USER
-    - sshpass -p $SSH_PASSWORD ssh $SSH_USER@$SSH_HOST
-    - ls -la
- 
+    - npm i
+    - ls
