@@ -6,5 +6,5 @@ deploy:
   image: ubuntu:latest
   script:
     - ls
-  tag:
+  tags:
     - ci
