@@ -196,13 +196,15 @@ export class GameService {
     const { sheet } = await this.prisma.music_answer_sheet.findFirst({
       where: { music_id: id },
     });
-
     const answerList = [];
-    for (let i = 1; i < playData.length; i++) {
-      const p_keypoints = playData[i]['keypoints'];
-      const a_idx = sheet[0]['time'] === 0 ? 2 * i : 2 * i - 1;
-      const a_keypoints = sheet[a_idx]['keypoints'];
-
+    let start_idx;
+    Object.entries(sheet).forEach(data => {
+      const { time } = data[1];
+      if (time === 2) start_idx = +data[0];
+    });
+    for (let i = 0; i < playData.length - 2; i++) {
+      const p_keypoints = playData[i + 2]['keypoints'];
+      const a_keypoints = sheet[start_idx + i * 2]['keypoints'];
       // 점수 백분율=> 모든 노래 최고점수의 총합/
       let score = 0;
       const detail = [0, 0, 0, 0, 0]; // perfect, great, good, normal, miss
