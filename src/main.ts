@@ -18,7 +18,7 @@ async function bootstrap() {
   );
   setupSwagger(app);
   app.enableCors({
-    origin: ['http://http://kdt-ai6-team11.elicecoding.com:5173','http://http://kdt-ai6-team11.elicecoding.com'],
+    origin: ['http://kdt-ai6-team11.elicecoding.com:5173','http://kdt-ai6-team11.elicecoding.com'],
     allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept',
     credentials: true, // 자격 증명 모드를 허용합니다.
   });
