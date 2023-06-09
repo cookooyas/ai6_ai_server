@@ -11,7 +11,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { user } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuthCredentialDto } from './dto/authCredential.dto';
 import {
@@ -19,16 +18,13 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
-  ApiProperty,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { GetJoinInfo } from 'src/util/swaggerOkResponse/getJoinInfo';
 import { GetSigninAccessToken } from 'src/util/swaggerOkResponse/getSigninAccessToken';
 import { GetSignoutMessage } from 'src/util/swaggerOkResponse/getSignoutMessage';
 import { GetLeaveMessage } from 'src/util/swaggerOkResponse/getLeaveMessage';
-import { userInfo } from 'os';
 
 @Controller('auth')
 @ApiTags('인증 API')

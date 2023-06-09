@@ -1,7 +1,6 @@
 import {
   Controller,
   Req,
-  Res,
   Body,
   Query,
   Get,
@@ -124,9 +123,17 @@ export class UserController {
     description: '정상 응답 (유저 찜 리스트를 반환한다.)',
   })
   @Get('/likes')
-  async findLikes(@Req() req, @Query('pageno') pageno: string) {
+  async findLikes(
+    @Req() req,
+    @Query('pageno') pageno: string,
+    @Query('perpage') perpage: string,
+  ) {
     const { user_id } = req.user;
-    return await this.userService.findLikes(+user_id, pageno ? +pageno : 0);
+    return await this.userService.findLikes(
+      +user_id,
+      pageno ? +pageno : 0,
+      perpage ? +perpage : 6,
+    );
   }
 
   @ApiOperation({
@@ -163,5 +170,24 @@ export class UserController {
   async findOneGameHistory(@Req() req, @Param('musicId') musicId: string) {
     const { user_id } = req.user;
     return await this.userService.findOneGameHistory(+user_id, +musicId);
+  }
+
+  @Get('/item/all')
+  getAllItem() {
+    return this.userService.getAllItem();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/item')
+  getClothedItem(@Req() req) {
+    const { user_id } = req.user;
+    return this.userService.getClothedItem(user_id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('/item/:itemId')
+  changeItem(@Param('itemId') itemId: number, @Req() req) {
+    const { user_id } = req.user;
+    return this.userService.changeItem(itemId, user_id);
   }
 }

@@ -1,11 +1,10 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateUserInfoDto } from './dto/update-userInfo.dto';
 import * as bcrypt from 'bcryptjs';
+import { ERROR_MESSAGE } from '../util/error';
+import { treeKillSync } from '@nestjs/cli/lib/utils/tree-kill';
+
 @Injectable()
 export class UserService {
   constructor(private prismaService: PrismaService) {}
@@ -29,7 +28,10 @@ export class UserService {
       if (
         await this.prismaService.user_info.findUnique({ where: { nickname } })
       ) {
-        throw new UnauthorizedException(`${nickname} is already exist.`);
+        throw new HttpException(
+          ERROR_MESSAGE.CONFLICT.USER.NICKNAME,
+          HttpStatus.CONFLICT,
+        );
       }
 
       await this.prismaService.user_info.update({
@@ -48,7 +50,10 @@ export class UserService {
       if (await bcrypt.compare(current_password, foundUserAuth.password)) {
         const salt = await bcrypt.genSalt();
         if (current_password === new_password) {
-          throw new UnauthorizedException('password not match');
+          throw new HttpException(
+            ERROR_MESSAGE.UNAUTHORIZED.PASSWORD,
+            HttpStatus.UNAUTHORIZED,
+          );
         }
         const hashedPassword = await bcrypt.hash(new_password, salt);
         await this.prismaService.user_auth.update({
@@ -56,7 +61,10 @@ export class UserService {
           data: { password: hashedPassword },
         });
       } else {
-        throw new UnauthorizedException('password not match');
+        throw new HttpException(
+          ERROR_MESSAGE.UNAUTHORIZED.PASSWORD,
+          HttpStatus.UNAUTHORIZED,
+        );
       }
     }
     return 'request success';
@@ -65,7 +73,10 @@ export class UserService {
   // 사용자 프로필 이미지 수정(업로드)
   async uploadUserProfileImage(userId: number, file: Express.MulterS3.File) {
     if (!file) {
-      throw new BadRequestException('there is no files');
+      throw new HttpException(
+        ERROR_MESSAGE.BAD_REQUEST.FILE,
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const filePath = file.location;
     await this.prismaService.user_info.update({
@@ -83,7 +94,7 @@ export class UserService {
     year: string,
     month: string,
   ): Promise<object[]> {
-    return await this.prismaService.user_play_log.findMany({
+    const calendar = await this.prismaService.user_play_log.findMany({
       where: {
         user_id: userId,
         created_at: {
@@ -99,13 +110,18 @@ export class UserService {
       orderBy: { created_at: 'asc' },
       select: { created_at: true },
     });
+    return calendar;
   }
 
   // 사용자 찜 리스트 조회
-  async findLikes(userId: number, pageno: number): Promise<any> {
+  async findLikes(
+    userId: number,
+    pageno: number,
+    perpage: number,
+  ): Promise<any> {
     let total_length;
     let maxPage = 1;
-    const perPage = 10;
+    const perPage = perpage;
     await this.prismaService.user_likes
       .findMany({
         where: { user_id: userId },
@@ -123,7 +139,6 @@ export class UserService {
         },
       },
     });
-
     return { userLikes, maxPage };
   }
 
@@ -184,17 +199,20 @@ export class UserService {
         distinct: ['created_at'],
       })
       .then(async data => {
+        console.log(data);
         if (data.length > 0) {
-          const { id, music_id, score } = data[0];
+          const { id, music_id, score, rank } = data[0];
           const found = await this.prismaService.user_score.groupBy({
             by: ['user_id'],
             _max: { score: true },
-            where: { music_id: id },
+            where: { music_id: musicId },
             orderBy: { _max: { score: 'desc' } },
           });
-          const rank = found.findIndex(value => value.user_id === userId) + 1;
+          console.log(found);
+          const user_rank =
+            found.findIndex(value => value.user_id === userId) + 1;
 
-          const { perfect, good, miss } =
+          const { perfect, great, good, normal, miss } =
             await this.prismaService.user_score_detail.findUnique({
               where: { score_id: id },
             });
@@ -204,23 +222,110 @@ export class UserService {
             });
           for (let i = 0; i < data.length; i++) {
             const { score, created_at } = data[i];
-
+            const time = created_at.toLocaleDateString();
             historyList.push({
               music_score: score,
-              music_score_created_at: created_at,
+              music_score_created_at: time,
             });
+          }
+          function filterHistoryList(historyList) {
+            const filteredList = [];
+
+            // time 값을 기준으로 그룹화
+            const groupedData = {};
+            historyList.forEach(obj => {
+              const { music_score, music_score_created_at } = obj;
+              if (
+                !groupedData[music_score_created_at] ||
+                score > groupedData[music_score_created_at].score
+              ) {
+                groupedData[music_score_created_at] = {
+                  music_score_created_at,
+                  music_score,
+                };
+              }
+            });
+
+            // 필터링된 값들을 새로운 배열에 추가
+            for (const key in groupedData) {
+              filteredList.push(groupedData[key]);
+            }
+
+            return filteredList;
           }
           result = {
             music_id,
-            music_best_score_detail: { score, rank, perfect, good, miss },
+            music_best_score_detail: {
+              score,
+              user_rank,
+              score_rank: rank,
+              perfect,
+              great,
+              good,
+              normal,
+              miss,
+            },
             music_total_score: total_score,
-            music_score_list: historyList.sort(
-              (a, b) =>
-                a['music_score_created_at'] - b['music_score_created_at'],
-            ),
+            music_score_list: filterHistoryList(historyList).sort((a, b) => {
+              const dateA = new Date(a.music_score_created_at);
+              const dateB = new Date(b.music_score_created_at);
+              return dateA.getTime() - dateB.getTime();
+            }),
           };
         }
       });
     return result;
+  }
+
+  // 전체 아이템 조회
+  async getAllItem() {
+    const items = await this.prismaService.item.findMany({
+      select: {
+        id: true,
+        name: true,
+        image_url: true,
+      },
+    });
+    return items;
+  }
+
+  async getOneItem(id) {
+    console.log(1);
+    console.log(id);
+    const found = await this.prismaService.item.findUnique({
+      where: { id },
+    });
+    if (!found) {
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.ITEM,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return;
+  }
+
+  async getClothedItem(userId) {
+    const user = await this.prismaService.user_info.findUnique({
+      where: { id: userId },
+      select: {
+        item: {
+          select: { id: true, name: true, image_url: true },
+        },
+      },
+    });
+    return {
+      id: user.item.id,
+      name: user.item.name,
+      image_url: user.item.image_url,
+    };
+  }
+
+  async changeItem(itemId, userId) {
+    await this.getOneItem(itemId);
+    await this.prismaService.user_info.update({
+      where: { user_id: userId },
+      data: { item_id: itemId },
+    });
+    return;
   }
 }

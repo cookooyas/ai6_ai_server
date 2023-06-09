@@ -3,9 +3,13 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { SingerService } from './singer.service';
 import { CreateSingerDto } from '../../dto/create-singer.dto';
@@ -18,6 +22,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { GetSingerInfoDto } from '../../dto/get-singer-info-dto';
+import { ERROR_MESSAGE } from '../../util/error';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('singer')
 @ApiTags('가수 API')
@@ -34,7 +40,7 @@ export class SingerController {
     type: [GetSingerInfoDto],
   })
   @Get()
-  getAll() {
+  getAll(): Promise<GetSingerInfoDto[]> {
     return this.singerService.getAll();
   }
 
@@ -49,7 +55,7 @@ export class SingerController {
     type: GetSingerInfoDto,
   })
   @Get(':singerId')
-  getOne(@Param('singerId') id: number) {
+  getOne(@Param('singerId') id: number): Promise<GetSingerInfoDto> {
     return this.singerService.getOne(id);
   }
 
@@ -62,8 +68,16 @@ export class SingerController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() singerData: CreateSingerDto) {
+  create(@Body() singerData: CreateSingerDto, @Req() req): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.singerService.create(singerData);
   }
 
@@ -77,8 +91,20 @@ export class SingerController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':singerId')
-  patch(@Param('singerId') id: number, @Body() updateData: UpdateSingerDto) {
+  patch(
+    @Param('singerId') id: number,
+    @Body() updateData: UpdateSingerDto,
+    @Req() req,
+  ): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.singerService.patch(id, updateData);
   }
 
@@ -91,8 +117,16 @@ export class SingerController {
     status: 200,
     description: '정상 응답',
   })
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':singerId')
-  remove(@Param('singerId') id: number) {
+  remove(@Param('singerId') id: number, @Req() req): Promise<void> {
+    const { isAdmin } = req.user;
+    if (!isAdmin) {
+      throw new HttpException(
+        ERROR_MESSAGE.FORBIDDEN.IS_NOT_ADMIN,
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.singerService.remove(id);
   }
 }

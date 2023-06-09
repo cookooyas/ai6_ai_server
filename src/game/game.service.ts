@@ -1,8 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PAGINATION, XP } from '../util/constants';
-import { GetGameRankListDto } from '../dto/get-game-rank-list.dto';
+import {
+  CHECK_POINTS,
+  CHECK_POINTS_LENGTH,
+  DEGREE_STANDARD,
+  KEYPOINT,
+  PAGINATION,
+} from '../util/constants';
 import { MusicService } from '../music/music.service';
+import { earnXP, theRank } from '../util/rankFunc';
+import {
+  degreeByTheta,
+  degreeToTheta,
+  vectorToTheta,
+} from '../util/calculateFunc';
+import {
+  music_answer,
+  music_answer_sheet,
+  user_info,
+  user_score,
+  user_score_detail,
+} from '@prisma/client';
+import { ERROR_MESSAGE } from '../util/error';
+import { GetMusicInfoDto } from '../dto/get-music-info.dto';
 
 @Injectable()
 export class GameService {
@@ -19,10 +39,10 @@ export class GameService {
       take: top,
     });
 
-    // 근데 soft-delete한 유저의 랭킹을 안 보여주고 싶은 건 map에서 어떻게 처리해야 하지?? 일단 null로 두고, 다시 map으로 봐야 하나?
+    // soft-delete한 유저의 랭킹을 안 보여주고 싶은 거 처리해주는 로직 추후 추가
     const rankings = await Promise.all(
       data.map(async (d, index) => {
-        const { nickname, profile_image_url } =
+        const { nickname, profile_image_url, xp } =
           await this.prisma.user_info.findFirst({
             where: { user_id: d.user_id },
           });
@@ -30,6 +50,7 @@ export class GameService {
           id: d.user_id,
           nickname,
           profile_image_url,
+          xp,
           score: d._max.score,
           rank: index + 1,
         };
@@ -38,54 +59,28 @@ export class GameService {
     return rankings;
   }
 
-  async myBestScoreByMusic(id: number, userId: number) {
-    const found = await this.prisma.user_score.findMany({
-      where: { music_id: id, user_id: userId },
-      orderBy: { score: 'desc', created_at: 'asc' },
-    });
-
-    if (!found) {
-      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
-    }
-
-    const data = await this.prisma.user_score.groupBy({
-      by: ['user_id'],
-      _max: { score: true },
-      where: { music_id: id },
-      orderBy: { _max: { score: 'desc' } },
-    });
-
-    const myRank = data.findIndex(value => value.user_id === userId) + 1;
-
-    const detail = await this.prisma.user_score_detail.findUnique({
-      where: { score_id: found[0].id },
-    });
-
-    return {
-      user_rank: myRank,
-      score: found[0].score,
-      score_rank: found[0].rank,
-      perfect: detail.perfect,
-      good: detail.good,
-      miss: detail.miss,
-    };
-  }
-
   async getAnswer(id: number) {
     await this.music.getOne(id);
 
-    const answer = await this.prisma.music_answer.findUnique({
+    const answer: music_answer = await this.prisma.music_answer.findUnique({
       where: { music_id: id },
     });
 
-    const answer_sheet = await this.prisma.music_answer_sheet.findUnique({
-      where: { music_id: id },
-    });
+    const answer_sheet: music_answer_sheet =
+      await this.prisma.music_answer_sheet.findUnique({
+        where: { music_id: id },
+      });
 
     if (!answer) {
-      throw new NotFoundException('정답 영상이 존재하지 않습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.ANSWER,
+        HttpStatus.NOT_FOUND,
+      );
     } else if (!answer_sheet) {
-      throw new NotFoundException('정답 관절 정보가 존재하지 않습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.ANSWER_SHEET,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return {
@@ -97,25 +92,35 @@ export class GameService {
   }
 
   async getScore(id: number, userId: number) {
-    const score = await this.prisma.user_score.findUnique({
+    const score: user_score = await this.prisma.user_score.findUnique({
       where: { id },
     });
     if (!score) {
-      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.SCORE,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
-    const score_detail = await this.prisma.user_score_detail.findUnique({
-      where: { score_id: id },
-    });
+    const score_detail: user_score_detail =
+      await this.prisma.user_score_detail.findUnique({
+        where: { score_id: id },
+      });
     if (!score_detail) {
-      throw new NotFoundException('플레이 정보가 존재하지 않습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.SCORE_DETAIL,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
-    const user = await this.prisma.user_info.findUnique({
+    const user: user_info = await this.prisma.user_info.findUnique({
       where: { id: userId },
     });
     if (!user) {
-      throw new NotFoundException('유저 정보가 존재하지 않습니다.');
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.USER,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return {
@@ -131,14 +136,13 @@ export class GameService {
     };
   }
 
-  async saveScore(id: number, userId: number, playData) {
+  async saveScore(id: number, userId: number, playData): Promise<number> {
     const { score, perfect, great, good, normal, miss, rank, delta_xp } =
       await this.calculateScore(id, playData, true);
 
-    // CreateScoreDto 아직 정의 안 함 : 나중에 해주기
-    const found = await this.music.getOne(id);
+    const found: GetMusicInfoDto = await this.music.getOne(id);
 
-    const new_score = await this.prisma.user_score.create({
+    const new_score: user_score = await this.prisma.user_score.create({
       data: {
         music_id: id,
         user_id: userId,
@@ -148,13 +152,18 @@ export class GameService {
       },
     });
 
-    // xp 체인지용
-    const user = await this.prisma.user_info.findUnique({
+    const user: user_info = await this.prisma.user_info.findUnique({
       where: { id: userId },
     });
 
-    const xp = user.xp + delta_xp;
-    console.log('xp: ', xp);
+    if (!user) {
+      throw new HttpException(
+        ERROR_MESSAGE.NOT_FOUND.USER,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const xp: number = user.xp + delta_xp;
     await this.prisma.user_info.update({
       where: { id: userId },
       data: { xp },
@@ -180,68 +189,48 @@ export class GameService {
       data: { played: found.played + 1 },
     });
 
-    return new_score.id; // scoreId가 필요한 방향으로 가면 리턴해주기
+    return new_score.id;
   }
 
   async calculateScore(id: number, playData, isUser: boolean) {
     const { sheet } = await this.prisma.music_answer_sheet.findFirst({
       where: { music_id: id },
     });
-
-    function cartesianToCylindrical(x, y) {
-      const theta = Math.atan2(y, x);
-      return (theta * 180) / Math.PI;
-    }
-    function vectorToTheta(KP, a, b) {
-      const v_x = KP[a].x - KP[b].x;
-      const v_y = KP[a].y - KP[b].y;
-      const theta = cartesianToCylindrical(v_x, v_y);
-      return theta;
-    }
-    const CHECK_POINTS = [
-      [5, 7],
-      [7, 9],
-      [6, 8],
-      [8, 10],
-      [11, 13],
-      [13, 15],
-      [12, 14],
-      [14, 16],
-      [9, 15],
-      [10, 16],
-    ];
     const answerList = [];
-    for (let i = 1; i < playData.length; i++) {
-      const p_keypoints = playData[i]['keypoints'];
-      const a_idx = sheet[0]['time'] === 0 ? 2 * i : 2 * i - 1;
-      const a_keypoints = sheet[a_idx]['keypoints'];
-
+    let start_idx;
+    Object.entries(sheet).forEach(data => {
+      const { time } = data[1];
+      if (time === 2) start_idx = +data[0];
+    });
+    for (let i = 0; i < playData.length - 2; i++) {
+      const p_keypoints = playData[i + 2]['keypoints'];
+      const a_keypoints = sheet[start_idx + i * 2]['keypoints'];
       // 점수 백분율=> 모든 노래 최고점수의 총합/
       let score = 0;
       const detail = [0, 0, 0, 0, 0]; // perfect, great, good, normal, miss
-      for (let j = 0; j < CHECK_POINTS.length; j++) {
-        const p_theta = vectorToTheta(
+      for (let j = 0; j < CHECK_POINTS_LENGTH; j++) {
+        const p_theta: number = vectorToTheta(
           p_keypoints,
           CHECK_POINTS[j][0],
           CHECK_POINTS[j][1],
         );
-        const a_theta = vectorToTheta(
+        const a_theta: number = vectorToTheta(
           a_keypoints,
           CHECK_POINTS[j][0],
           CHECK_POINTS[j][1],
         );
 
-        const degree = Math.abs(a_theta - p_theta);
-        const cos_score = Math.cos((Math.PI / 180) * degree);
+        const degree = degreeByTheta(a_theta, p_theta);
+        const cos_score = Math.cos(degreeToTheta(degree));
 
-        score = degree <= 70 ? (score += cos_score) : score;
-        if (degree <= 10) {
+        score = degree <= DEGREE_STANDARD.NORMAL ? (score += cos_score) : score;
+        if (degree <= DEGREE_STANDARD.PERFECT) {
           detail[0] += 1;
-        } else if (degree <= 20) {
+        } else if (degree <= DEGREE_STANDARD.GREAT) {
           detail[1] += 1;
-        } else if (degree <= 40) {
+        } else if (degree <= DEGREE_STANDARD.GOOD) {
           detail[2] += 1;
-        } else if (degree <= 70) {
+        } else if (degree <= DEGREE_STANDARD.NORMAL) {
           detail[3] += 1;
         } else {
           detail[4] += 1;
@@ -249,7 +238,6 @@ export class GameService {
       }
       answerList.push({ score, detail });
     }
-    console.log(new Date());
 
     const scoreData = answerList.reduce(
       (acc, cur) => {
@@ -275,26 +263,11 @@ export class GameService {
       },
     );
 
-    const KEYPOINTS = 10;
-    scoreData.score = (scoreData.score / (scoreData.frame * KEYPOINTS)) * 100;
+    scoreData.score = (scoreData.score / (scoreData.frame * KEYPOINT)) * 100;
 
     const score = scoreData.score;
-
-    scoreData.rank =
-      score >= 95
-        ? 'SSS'
-        : score >= 90
-        ? 'S'
-        : score >= 80
-        ? 'A'
-        : score >= 70
-        ? 'B'
-        : score >= 60
-        ? 'C'
-        : score >= 40
-        ? 'D'
-        : 'F';
-    scoreData.delta_xp = XP[scoreData.rank];
+    scoreData.rank = theRank(score);
+    scoreData.delta_xp = earnXP(scoreData.rank);
 
     if (!isUser) {
       const { frame, delta_xp, ...guestScore } = scoreData;
